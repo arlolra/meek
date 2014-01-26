@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"io"
+	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -73,8 +75,21 @@ func acceptLoop(ln *pt.SocksListener) error {
 }
 
 func main() {
-	var err error
+	var logFilename string
 
+	flag.StringVar(&logFilename, "log", "", "name of log file")
+	flag.Parse()
+
+	if logFilename != "" {
+		f, err := os.OpenFile(logFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Fatalf("error opening log file: %s", err)
+		}
+		defer f.Close()
+		log.SetOutput(f)
+	}
+
+	var err error
 	ptInfo, err = pt.ClientSetup([]string{ptMethodName})
 	if err != nil {
 		os.Exit(1)
