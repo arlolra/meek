@@ -1,19 +1,21 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"flag"
-	"io"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 )
 
 import "git.torproject.org/pluggable-transports/goptlib.git"
 
 const ptMethodName = "meek"
+const sessionIdLength = 32
 
 var ptInfo pt.ClientInfo
 
@@ -21,20 +23,17 @@ var ptInfo pt.ClientInfo
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
-func copyLoop(a, b net.Conn) {
-	var wg sync.WaitGroup
-	wg.Add(2)
+func copyLoop(conn net.Conn, u, sessionId string) error {
+	return nil
+}
 
-	go func() {
-		io.Copy(b, a)
-		wg.Done()
-	}()
-	go func() {
-		io.Copy(a, b)
-		wg.Done()
-	}()
-
-	wg.Wait()
+func genSessionId() string {
+	buf := make([]byte, sessionIdLength)
+	_, err := rand.Read(buf)
+	if err != nil {
+		panic(err.Error())
+	}
+	return base64.StdEncoding.EncodeToString(buf)
 }
 
 func handler(conn *pt.SocksConn) error {
@@ -44,20 +43,19 @@ func handler(conn *pt.SocksConn) error {
 	}()
 
 	defer conn.Close()
-	remote, err := net.Dial("tcp", conn.Req.Target)
-	if err != nil {
-		conn.Reject()
-		return err
-	}
-	defer remote.Close()
-	err = conn.Grant(remote.RemoteAddr().(*net.TCPAddr))
+	err := conn.Grant(&net.TCPAddr{IP: net.ParseIP("0.0.0.0"), Port: 0})
 	if err != nil {
 		return err
 	}
 
-	copyLoop(conn, remote)
+	sessionId := genSessionId()
+	u := url.URL{
+		Scheme: "http",
+		Host:   conn.Req.Target,
+		Path:   "/",
+	}
 
-	return nil
+	return copyLoop(conn, u.String(), sessionId)
 }
 
 func acceptLoop(ln *pt.SocksListener) error {
