@@ -65,12 +65,18 @@ func acceptLoop(ln *pt.SocksListener) error {
 	for {
 		conn, err := ln.AcceptSocks()
 		if err != nil {
+			log.Printf("error in AcceptSocks: %s", err)
 			if e, ok := err.(net.Error); ok && !e.Temporary() {
 				return err
 			}
 			continue
 		}
-		go handler(conn)
+		go func() {
+			err := handler(conn)
+			if err != nil {
+				log.Printf("error in handling request: %s", err)
+			}
+		}()
 	}
 }
 
@@ -92,7 +98,7 @@ func main() {
 	var err error
 	ptInfo, err = pt.ClientSetup([]string{ptMethodName})
 	if err != nil {
-		os.Exit(1)
+		log.Fatalf("error in ClientSetup: %s", err)
 	}
 
 	listeners := make([]net.Listener, 0)
@@ -106,6 +112,7 @@ func main() {
 			}
 			go acceptLoop(ln)
 			pt.Cmethod(methodName, ln.Version(), ln.Addr())
+			log.Printf("listening on %s", ln.Addr())
 			listeners = append(listeners, ln)
 		default:
 			pt.CmethodError(methodName, "no such method")
@@ -144,4 +151,6 @@ func main() {
 		case sig = <-sigChan:
 		}
 	}
+
+	log.Printf("done")
 }
