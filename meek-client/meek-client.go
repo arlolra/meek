@@ -1,13 +1,3 @@
-// Dummy no-op pluggable transport client. Works only as a managed proxy.
-//
-// Usage (in torrc):
-// 	UseBridges 1
-// 	Bridge dummy X.X.X.X:YYYY
-// 	ClientTransportPlugin dummy exec dummy-client
-//
-// Because this transport doesn't do anything to the traffic, you can use any
-// ordinary relay's ORPort in the Bridge line; it doesn't have to declare
-// support for the dummy transport.
 package main
 
 import (
@@ -20,6 +10,8 @@ import (
 )
 
 import "git.torproject.org/pluggable-transports/goptlib.git"
+
+const ptMethodName = "meek"
 
 var ptInfo pt.ClientInfo
 
@@ -83,7 +75,7 @@ func acceptLoop(ln *pt.SocksListener) error {
 func main() {
 	var err error
 
-	ptInfo, err = pt.ClientSetup([]string{"dummy"})
+	ptInfo, err = pt.ClientSetup([]string{ptMethodName})
 	if err != nil {
 		os.Exit(1)
 	}
@@ -91,7 +83,7 @@ func main() {
 	listeners := make([]net.Listener, 0)
 	for _, methodName := range ptInfo.MethodNames {
 		switch methodName {
-		case "dummy":
+		case ptMethodName:
 			ln, err := pt.ListenSocks("tcp", "127.0.0.1:0")
 			if err != nil {
 				pt.CmethodError(methodName, err.Error())
