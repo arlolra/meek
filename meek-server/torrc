@@ -1,0 +1,8 @@
+BridgeRelay 1
+ORPort 9001
+ExtORPort 6669
+SocksPort 0
+ServerTransportPlugin meek exec ./meek-server --log meek-server.log --port 7002
+ExitPolicy reject *:*
+PublishServerDescriptor 0
+DataDirectory datadir
