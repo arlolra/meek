@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -53,6 +55,9 @@ func copyLoop(conn net.Conn, u, sessionId string) error {
 		resp, err := roundTrip(u, sessionId, buf[:nr])
 		if err != nil {
 			return err
+		}
+		if resp.StatusCode != 200 {
+			return errors.New(fmt.Sprintf("status code was %d, not 200", resp.StatusCode))
 		}
 
 		nw, err := io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
