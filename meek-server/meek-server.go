@@ -28,7 +28,7 @@ var ptInfo pt.ServerInfo
 var handlerChan = make(chan int)
 
 func httpBadRequest(w http.ResponseWriter) {
-        http.Error(w, "Bad request.\n", http.StatusBadRequest)
+	http.Error(w, "Bad request.\n", http.StatusBadRequest)
 }
 
 func httpInternalServerError(w http.ResponseWriter) {
