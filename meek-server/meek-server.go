@@ -61,12 +61,18 @@ func acceptLoop(ln net.Listener) error {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
+			log.Printf("error in Accept: %s", err)
 			if e, ok := err.(net.Error); ok && !e.Temporary() {
 				return err
 			}
 			continue
 		}
-		go handler(conn)
+		go func() {
+			err = handler(conn)
+			if err != nil {
+				log.Printf("error in handling connection: %s", err)
+			}
+		}()
 	}
 }
 
@@ -88,9 +94,10 @@ func main() {
 	var err error
 	ptInfo, err = pt.ServerSetup([]string{ptMethodName})
 	if err != nil {
-		os.Exit(1)
+		log.Fatalf("error in ServerSetup: %s", err)
 	}
 
+	log.Printf("starting")
 	listeners := make([]net.Listener, 0)
 	for _, bindaddr := range ptInfo.Bindaddrs {
 		switch bindaddr.MethodName {
@@ -102,6 +109,7 @@ func main() {
 			}
 			go acceptLoop(ln)
 			pt.Smethod(bindaddr.MethodName, ln.Addr())
+			log.Printf("listening on %s", ln.Addr())
 			listeners = append(listeners, ln)
 		default:
 			pt.SmethodError(bindaddr.MethodName, "no such method")
@@ -140,4 +148,6 @@ func main() {
 		case sig = <-sigChan:
 		}
 	}
+
+	log.Printf("done")
 }
