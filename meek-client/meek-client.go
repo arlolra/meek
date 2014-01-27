@@ -31,7 +31,13 @@ var ptInfo pt.ClientInfo
 var handlerChan = make(chan int)
 
 func roundTrip(u, sessionId string, buf []byte) (*http.Response, error) {
-	return http.Post(u, "application/octet-stream", bytes.NewReader(buf))
+	req, err := http.NewRequest("POST", u, bytes.NewReader(buf))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("X-Session-Id", sessionId)
+	return http.DefaultClient.Do(req)
 }
 
 func copyLoop(conn net.Conn, u, sessionId string) error {
