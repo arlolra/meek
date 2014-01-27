@@ -147,12 +147,27 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 	// log.Printf("wrote %d bytes to response", n)
 }
 
+func (state *State) ExpireSessions() {
+	for {
+		time.Sleep(maxSessionStaleness)
+		state.lock.Lock()
+		for sessionId, session := range state.sessionMap {
+			if session.Expired() {
+				log.Printf("deleting expired session %q", sessionId)
+				delete(state.sessionMap, sessionId)
+			}
+		}
+		state.lock.Unlock()
+	}
+}
+
 func startListener(network string, addr *net.TCPAddr) (net.Listener, error) {
 	ln, err := net.ListenTCP(network, addr)
 	if err != nil {
 		return nil, err
 	}
 	state := NewState()
+	go state.ExpireSessions()
 	server := &http.Server{
 		Handler: state,
 	}
