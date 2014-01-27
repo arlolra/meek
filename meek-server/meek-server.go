@@ -1,14 +1,3 @@
-// Dummy no-op pluggable transport server. Works only as a managed proxy.
-//
-// Usage (in torrc):
-// 	BridgeRelay 1
-// 	ORPort 9001
-// 	ExtORPort 6669
-// 	ServerTransportPlugin dummy exec dummy-server
-//
-// Because the dummy transport doesn't do anything to the traffic, you can
-// connect to it with any ordinary Tor client; you don't have to use
-// dummy-client.
 package main
 
 import (
@@ -21,6 +10,8 @@ import (
 )
 
 import "git.torproject.org/pluggable-transports/goptlib.git"
+
+const ptMethodName = "meek"
 
 var ptInfo pt.ServerInfo
 
@@ -52,7 +43,7 @@ func handler(conn net.Conn) error {
 		handlerChan <- -1
 	}()
 
-	or, err := pt.DialOr(&ptInfo, conn.RemoteAddr().String(), "dummy")
+	or, err := pt.DialOr(&ptInfo, conn.RemoteAddr().String(), ptMethodName)
 	if err != nil {
 		return err
 	}
@@ -80,7 +71,7 @@ func acceptLoop(ln net.Listener) error {
 func main() {
 	var err error
 
-	ptInfo, err = pt.ServerSetup([]string{"dummy"})
+	ptInfo, err = pt.ServerSetup([]string{ptMethodName})
 	if err != nil {
 		os.Exit(1)
 	}
@@ -88,7 +79,7 @@ func main() {
 	listeners := make([]net.Listener, 0)
 	for _, bindaddr := range ptInfo.Bindaddrs {
 		switch bindaddr.MethodName {
-		case "dummy":
+		case ptMethodName:
 			ln, err := net.ListenTCP("tcp", bindaddr.Addr)
 			if err != nil {
 				pt.SmethodError(bindaddr.MethodName, err.Error())
