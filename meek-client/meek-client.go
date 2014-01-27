@@ -20,6 +20,7 @@ import "git.torproject.org/pluggable-transports/goptlib.git"
 
 const ptMethodName = "meek"
 const sessionIdLength = 32
+const maxPayloadLength = 0x10000
 const initPollInterval = 100 * time.Millisecond
 const maxPollInterval = 5 * time.Second
 const pollIntervalMultiplier = 1.5
@@ -54,7 +55,7 @@ func copyLoop(conn net.Conn, u, sessionId string) error {
 			return err
 		}
 
-		nw, err := io.Copy(conn, resp.Body)
+		nw, err := io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
 		if err != nil {
 			return err
 		}
