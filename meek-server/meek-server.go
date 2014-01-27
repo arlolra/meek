@@ -33,13 +33,17 @@ func httpInternalServerError(w http.ResponseWriter) {
 	http.Error(w, "Internal server error.\n", http.StatusInternalServerError)
 }
 
+type Session struct {
+	Or *net.TCPConn
+}
+
 type State struct {
-	sessionMap map[string]*net.TCPConn
+	sessionMap map[string]*Session
 }
 
 func NewState() *State {
 	state := new(State)
-	state.sessionMap = make(map[string]*net.TCPConn)
+	state.sessionMap = make(map[string]*Session)
 	return state
 }
 
@@ -78,30 +82,34 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	or, ok := state.sessionMap[id]
+	var session *Session
+	var ok bool
+
+	session, ok = state.sessionMap[id]
 	if ok {
 		log.Printf("already existing session id %q", id)
 	} else {
 		log.Printf("unknown session id %q; creating new session", id)
-		or, err = pt.DialOr(&ptInfo, req.RemoteAddr, ptMethodName)
+		or, err := pt.DialOr(&ptInfo, req.RemoteAddr, ptMethodName)
 		if err != nil {
 			log.Printf("error in DialOr: %s", err)
 			httpInternalServerError(w)
 			return
 		}
-		state.sessionMap[id] = or
+		session = &Session{Or: or}
+		state.sessionMap[id] = session
 	}
 
 	body := http.MaxBytesReader(w, req.Body, maxPayloadLength)
-	_, err = io.Copy(or, body)
+	_, err = io.Copy(session.Or, body)
 	if err != nil {
 		log.Printf("error copying body to ORPort: %s", err)
 		return
 	}
 
 	buf := make([]byte, maxPayloadLength)
-	or.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
-	n, err := or.Read(buf)
+	session.Or.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
+	n, err := session.Or.Read(buf)
 	if err != nil {
 		if e, ok := err.(net.Error); !ok || !e.Timeout() {
 			log.Printf("error reading from ORPort: %s", err)
