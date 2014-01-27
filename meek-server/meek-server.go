@@ -19,6 +19,7 @@ import "git.torproject.org/pluggable-transports/goptlib.git"
 const ptMethodName = "meek"
 const minSessionIdLength = 32
 const maxPayloadLength = 0x10000
+const maxSessionStaleness = 120 * time.Second
 
 var ptInfo pt.ServerInfo
 
@@ -35,7 +36,16 @@ func httpInternalServerError(w http.ResponseWriter) {
 }
 
 type Session struct {
-	Or *net.TCPConn
+	Or       *net.TCPConn
+	LastSeen time.Time
+}
+
+func (session *Session) Touch() {
+	session.LastSeen = time.Now()
+}
+
+func (session *Session) Expired() bool {
+	return time.Since(session.LastSeen) > maxSessionStaleness
 }
 
 type State struct {
@@ -81,6 +91,7 @@ func (state *State) getSession(sessionId string, req *http.Request) (*Session, e
 
 	session := state.sessionMap[sessionId]
 	if session != nil {
+		session.Touch()
 		return session, nil
 	}
 
@@ -92,6 +103,7 @@ func (state *State) getSession(sessionId string, req *http.Request) (*Session, e
 	}
 	session = &Session{Or: or}
 	state.sessionMap[sessionId] = session
+	session.Touch()
 
 	return session, nil
 }
