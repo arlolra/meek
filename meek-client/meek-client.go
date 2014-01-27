@@ -1,21 +1,28 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 import "git.torproject.org/pluggable-transports/goptlib.git"
 
 const ptMethodName = "meek"
 const sessionIdLength = 32
+const initPollInterval = 10 * time.Millisecond
+const maxPollInterval = 5 * time.Second
+const pollIntervalMultiplier = 1.01
 
 var ptInfo pt.ClientInfo
 
@@ -23,7 +30,50 @@ var ptInfo pt.ClientInfo
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
+func roundTrip(u, sessionId string, buf []byte) (*http.Response, error) {
+	return http.Post(u, "application/octet-stream", bytes.NewReader(buf))
+}
+
 func copyLoop(conn net.Conn, u, sessionId string) error {
+	buf := make([]byte, 0x10000)
+	var interval time.Duration
+
+	conn.SetReadDeadline(time.Now().Add(initPollInterval))
+	for {
+		nr, readErr := conn.Read(buf)
+		// log.Printf("read from local: %q", buf[:nr])
+
+		resp, err := roundTrip(u, sessionId, buf[:nr])
+		if err != nil {
+			return err
+		}
+
+		nw, err := io.Copy(conn, resp.Body)
+		if err != nil {
+			return err
+		}
+		// log.Printf("read from remote: %d", nw)
+
+		if readErr != nil {
+			if e, ok := readErr.(net.Error); !ok || !e.Timeout() {
+				return readErr
+			}
+		}
+
+		if nw > 0 {
+			interval = 0
+		} else if interval < initPollInterval {
+			interval = initPollInterval
+		} else {
+			interval = time.Duration(float64(interval) * pollIntervalMultiplier)
+		}
+		if interval > maxPollInterval {
+			interval = maxPollInterval
+		}
+		// log.Printf("next poll %.6f s", interval.Seconds())
+		conn.SetReadDeadline(time.Now().Add(interval))
+	}
+
 	return nil
 }
 
