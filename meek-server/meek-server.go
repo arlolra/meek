@@ -93,12 +93,11 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 	}
 
 	body := http.MaxBytesReader(w, req.Body, maxPayloadLength)
-	nc, err := io.Copy(or, body)
+	_, err = io.Copy(or, body)
 	if err != nil {
 		log.Printf("error copying body to ORPort: %s", err)
 		return
 	}
-	log.Printf("copied %d bytes to ORPort", nc)
 
 	buf := make([]byte, maxPayloadLength)
 	or.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
@@ -109,13 +108,13 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	log.Printf("read %d bytes from ORPort: %q", n, buf[:n])
+	// log.Printf("read %d bytes from ORPort: %q", n, buf[:n])
 	n, err = w.Write(buf[:n])
 	if err != nil {
 		log.Printf("error writing to response: %s", err)
 		return
 	}
-	log.Printf("wrote %d bytes to response", n)
+	// log.Printf("wrote %d bytes to response", n)
 }
 
 func startListener(network string, addr *net.TCPAddr) (net.Listener, error) {
