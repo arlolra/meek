@@ -1,0 +1,4 @@
+UseBridges 1
+Bridge meek 127.0.0.1:7002
+ClientTransportPlugin meek exec ./meek-client --log meek-client.log
+DataDirectory datadir
