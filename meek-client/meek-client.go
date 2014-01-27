@@ -20,7 +20,7 @@ import "git.torproject.org/pluggable-transports/goptlib.git"
 
 const ptMethodName = "meek"
 const sessionIdLength = 32
-const initPollInterval = 10 * time.Millisecond
+const initPollInterval = 100 * time.Millisecond
 const maxPollInterval = 5 * time.Second
 const pollIntervalMultiplier = 1.5
 
