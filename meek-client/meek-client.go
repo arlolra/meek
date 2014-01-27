@@ -56,8 +56,8 @@ func copyLoop(conn net.Conn, u, sessionId string) error {
 		if err != nil {
 			return err
 		}
-		if resp.StatusCode != 200 {
-			return errors.New(fmt.Sprintf("status code was %d, not 200", resp.StatusCode))
+		if resp.StatusCode != http.StatusOK {
+			return errors.New(fmt.Sprintf("status code was %d, not %d", resp.StatusCode, http.StatusOK))
 		}
 
 		nw, err := io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
