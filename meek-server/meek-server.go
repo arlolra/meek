@@ -78,8 +78,10 @@ func acceptLoop(ln net.Listener) error {
 
 func main() {
 	var logFilename string
+	var port int
 
 	flag.StringVar(&logFilename, "log", "", "name of log file")
+	flag.IntVar(&port, "port", 0, "port to listen on")
 	flag.Parse()
 
 	if logFilename != "" {
@@ -100,6 +102,9 @@ func main() {
 	log.Printf("starting")
 	listeners := make([]net.Listener, 0)
 	for _, bindaddr := range ptInfo.Bindaddrs {
+		if port != 0 {
+			bindaddr.Addr.Port = port
+		}
 		switch bindaddr.MethodName {
 		case ptMethodName:
 			ln, err := net.ListenTCP("tcp", bindaddr.Addr)
