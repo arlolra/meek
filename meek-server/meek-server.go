@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -39,6 +40,7 @@ type Session struct {
 
 type State struct {
 	sessionMap map[string]*Session
+	lock       sync.Mutex
 }
 
 func NewState() *State {
@@ -73,31 +75,39 @@ func (state *State) Get(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("I’m just a happy little web server.\n"))
 }
 
-func (state *State) Post(w http.ResponseWriter, req *http.Request) {
-	var err error
+func (state *State) getSession(sessionId string, req *http.Request) (*Session, error) {
+	state.lock.Lock()
+	defer state.lock.Unlock()
 
-	id := req.Header.Get("x-session-id")
-	if len(id) < minSessionIdLength {
+	session := state.sessionMap[sessionId]
+	if session != nil {
+		return session, nil
+	}
+
+	log.Printf("unknown session id %q; creating new session", sessionId)
+
+	or, err := pt.DialOr(&ptInfo, req.RemoteAddr, ptMethodName)
+	if err != nil {
+		return nil, err
+	}
+	session = &Session{Or: or}
+	state.sessionMap[sessionId] = session
+
+	return session, nil
+}
+
+func (state *State) Post(w http.ResponseWriter, req *http.Request) {
+	sessionId := req.Header.Get("x-session-id")
+	if len(sessionId) < minSessionIdLength {
 		httpBadRequest(w)
 		return
 	}
 
-	var session *Session
-	var ok bool
-
-	session, ok = state.sessionMap[id]
-	if ok {
-		log.Printf("already existing session id %q", id)
-	} else {
-		log.Printf("unknown session id %q; creating new session", id)
-		or, err := pt.DialOr(&ptInfo, req.RemoteAddr, ptMethodName)
-		if err != nil {
-			log.Printf("error in DialOr: %s", err)
-			httpInternalServerError(w)
-			return
-		}
-		session = &Session{Or: or}
-		state.sessionMap[id] = session
+	session, err := state.getSession(sessionId, req)
+	if err != nil {
+		log.Print(err)
+		httpInternalServerError(w)
+		return
 	}
 
 	body := http.MaxBytesReader(w, req.Body, maxPayloadLength)
