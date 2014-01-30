@@ -1,0 +1,5 @@
+Dedicated subdomain for meek-server bridge.
+
+HTTPS certificate for same.
+
+Certificate pinning in meek-client.
