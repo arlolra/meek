@@ -21,6 +21,15 @@ func pathJoin(a, b string) string {
 	return a + b
 }
 
+// We reflect only a whitelisted set of header fields in requests. The full list
+// includes things like User-Agent and X-Appengine-Country that the Tor bridge
+// doesn't need to know. Responses, on the other hand, copy the full set of
+// headers.
+var reflectedRequestFields = []string{
+	"Content-Type",
+	"X-Session-Id",
+}
+
 func copyRequest(r *http.Request) (*http.Request, error) {
 	fwu, err := url.Parse(forwardURL)
 	if err != nil {
@@ -32,8 +41,9 @@ func copyRequest(r *http.Request) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	for key, values := range r.Header {
-		for _, value := range values {
+	for _, key := range reflectedRequestFields {
+		value := r.Header.Get(key)
+		if value != "" {
 			c.Header.Add(key, value)
 		}
 	}
