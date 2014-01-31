@@ -31,12 +31,11 @@ var reflectedHeaderFields = []string{
 }
 
 func copyRequest(r *http.Request) (*http.Request, error) {
-	fwu, err := url.Parse(forwardURL)
+	u, err := url.Parse(forwardURL)
 	if err != nil {
 		return nil, err
 	}
-	u := fwu.ResolveReference(r.URL)
-	u.Path = pathJoin(fwu.Path, r.URL.Path)
+	u.Path = pathJoin(u.Path, r.URL.Path)
 	c, err := http.NewRequest(r.Method, u.String(), r.Body)
 	if err != nil {
 		return nil, err
