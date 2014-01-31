@@ -33,17 +33,20 @@ var ptInfo pt.ClientInfo
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
-func roundTrip(u, sessionId string, buf []byte) (*http.Response, error) {
+func roundTrip(u, host, sessionId string, buf []byte) (*http.Response, error) {
 	req, err := http.NewRequest("POST", u, bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
+	}
+	if host != "" {
+		req.Host = host
 	}
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("X-Session-Id", sessionId)
 	return http.DefaultClient.Do(req)
 }
 
-func copyLoop(conn net.Conn, u, sessionId string) error {
+func copyLoop(conn net.Conn, u, host, sessionId string) error {
 	buf := make([]byte, 0x10000)
 	var interval time.Duration
 
@@ -52,7 +55,7 @@ func copyLoop(conn net.Conn, u, sessionId string) error {
 		nr, readErr := conn.Read(buf)
 		// log.Printf("read from local: %q", buf[:nr])
 
-		resp, err := roundTrip(u, sessionId, buf[:nr])
+		resp, err := roundTrip(u, host, sessionId, buf[:nr])
 		if err != nil {
 			return err
 		}
@@ -112,17 +115,30 @@ func handler(conn *pt.SocksConn) error {
 
 	sessionId := genSessionId()
 
-	u, ok := conn.Req.Args.Get("url")
-	if !ok {
+	urlArg, ok := conn.Req.Args.Get("url")
+	var u *url.URL
+	if ok {
+		u, err = url.Parse(urlArg)
+		if err != nil {
+			return err
+		}
+	} else {
 		// If no url arg, use SOCKS target.
-		u = (&url.URL{
+		u = &url.URL{
 			Scheme: "http",
 			Host:   conn.Req.Target,
 			Path:   "/",
-		}).String()
+		}
 	}
 
-	return copyLoop(conn, u, sessionId)
+	host := ""
+	front, ok := conn.Req.Args.Get("front")
+	if ok {
+		host = u.Host
+		u.Host = front
+	}
+
+	return copyLoop(conn, u.String(), host, sessionId)
 }
 
 func acceptLoop(ln *pt.SocksListener) error {
