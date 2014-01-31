@@ -43,7 +43,7 @@ func roundTrip(u, host, sessionId string, buf []byte) (*http.Response, error) {
 	}
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("X-Session-Id", sessionId)
-	return http.DefaultClient.Do(req)
+	return http.DefaultTransport.RoundTrip(req)
 }
 
 func copyLoop(conn net.Conn, u, host, sessionId string) error {
