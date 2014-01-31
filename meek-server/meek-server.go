@@ -19,6 +19,7 @@ import "git.torproject.org/pluggable-transports/goptlib.git"
 const ptMethodName = "meek"
 const minSessionIdLength = 32
 const maxPayloadLength = 0x10000
+const turnaroundDeadline = 10 * time.Millisecond
 const maxSessionStaleness = 120 * time.Second
 
 var ptInfo pt.ServerInfo
@@ -127,7 +128,7 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 	}
 
 	buf := make([]byte, maxPayloadLength)
-	session.Or.SetReadDeadline(time.Now().Add(10 * time.Millisecond))
+	session.Or.SetReadDeadline(time.Now().Add(turnaroundDeadline))
 	n, err := session.Or.Read(buf)
 	if err != nil {
 		if e, ok := err.(net.Error); !ok || !e.Timeout() {
