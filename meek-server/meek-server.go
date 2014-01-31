@@ -88,7 +88,7 @@ func (state *State) Get(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("I’m just a happy little web server.\n"))
 }
 
-func (state *State) getSession(sessionId string, req *http.Request) (*Session, error) {
+func (state *State) GetSession(sessionId string, req *http.Request) (*Session, error) {
 	state.lock.Lock()
 	defer state.lock.Unlock()
 
@@ -140,7 +140,7 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := state.getSession(sessionId, req)
+	session, err := state.GetSession(sessionId, req)
 	if err != nil {
 		log.Print(err)
 		httpInternalServerError(w)
