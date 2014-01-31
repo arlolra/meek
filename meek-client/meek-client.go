@@ -47,7 +47,7 @@ func roundTrip(u, host, sessionId string, buf []byte) (*http.Response, error) {
 }
 
 func copyLoop(conn net.Conn, u, host, sessionId string) error {
-	buf := make([]byte, 0x10000)
+	buf := make([]byte, maxPayloadLength)
 	var interval time.Duration
 
 	conn.SetReadDeadline(time.Now().Add(initPollInterval))
