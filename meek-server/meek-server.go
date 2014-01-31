@@ -90,19 +90,16 @@ func (state *State) getSession(sessionId string, req *http.Request) (*Session, e
 	defer state.lock.Unlock()
 
 	session := state.sessionMap[sessionId]
-	if session != nil {
-		session.Touch()
-		return session, nil
-	}
+	if session == nil {
+		log.Printf("unknown session id %q; creating new session", sessionId)
 
-	log.Printf("unknown session id %q; creating new session", sessionId)
-
-	or, err := pt.DialOr(&ptInfo, req.RemoteAddr, ptMethodName)
-	if err != nil {
-		return nil, err
+		or, err := pt.DialOr(&ptInfo, req.RemoteAddr, ptMethodName)
+		if err != nil {
+			return nil, err
+		}
+		session = &Session{Or: or}
+		state.sessionMap[sessionId] = session
 	}
-	session = &Session{Or: or}
-	state.sessionMap[sessionId] = session
 	session.Touch()
 
 	return session, nil
