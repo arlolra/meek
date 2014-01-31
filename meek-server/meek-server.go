@@ -168,7 +168,7 @@ func (state *State) CloseSession(sessionId string) {
 
 func (state *State) ExpireSessions() {
 	for {
-		time.Sleep(maxSessionStaleness)
+		time.Sleep(maxSessionStaleness / 2)
 		state.lock.Lock()
 		for sessionId, session := range state.sessionMap {
 			if session.Expired() {
