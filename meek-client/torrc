@@ -1,4 +1,4 @@
 UseBridges 1
-Bridge meek tor1.bamsoftware.com:7002 url=https://meek-reflect.appspot.com/ front=www.google.com
+Bridge meek 0.0.2.0:1 url=https://meek-reflect.appspot.com/ front=www.google.com
 ClientTransportPlugin meek exec ./meek-client --log meek-client.log
 DataDirectory datadir
