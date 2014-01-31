@@ -109,7 +109,7 @@ func (state *State) getSession(sessionId string, req *http.Request) (*Session, e
 }
 
 func (state *State) Post(w http.ResponseWriter, req *http.Request) {
-	sessionId := req.Header.Get("x-session-id")
+	sessionId := req.Header.Get("X-Session-Id")
 	if len(sessionId) < minSessionIdLength {
 		httpBadRequest(w)
 		return
