@@ -111,13 +111,18 @@ func handler(conn *pt.SocksConn) error {
 	}
 
 	sessionId := genSessionId()
-	u := url.URL{
-		Scheme: "http",
-		Host:   conn.Req.Target,
-		Path:   "/",
+
+	u, ok := conn.Req.Args.Get("url")
+	if !ok {
+		// If no url arg, use SOCKS target.
+		u = (&url.URL{
+			Scheme: "http",
+			Host:   conn.Req.Target,
+			Path:   "/",
+		}).String()
 	}
 
-	return copyLoop(conn, u.String(), sessionId)
+	return copyLoop(conn, u, sessionId)
 }
 
 func acceptLoop(ln *pt.SocksListener) error {
