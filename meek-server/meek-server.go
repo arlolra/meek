@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -106,6 +108,31 @@ func (state *State) getSession(sessionId string, req *http.Request) (*Session, e
 	return session, nil
 }
 
+func transact(session *Session, w http.ResponseWriter, req *http.Request) error {
+	body := http.MaxBytesReader(w, req.Body, maxPayloadLength)
+	_, err := io.Copy(session.Or, body)
+	if err != nil {
+		return errors.New(fmt.Sprintf("copying body to ORPort: %s", err))
+	}
+
+	buf := make([]byte, maxPayloadLength)
+	session.Or.SetReadDeadline(time.Now().Add(turnaroundDeadline))
+	n, err := session.Or.Read(buf)
+	if err != nil {
+		if e, ok := err.(net.Error); !ok || !e.Timeout() {
+			httpInternalServerError(w)
+			return errors.New(fmt.Sprintf("reading from ORPort: %s", err))
+		}
+	}
+	// log.Printf("read %d bytes from ORPort: %q", n, buf[:n])
+	n, err = w.Write(buf[:n])
+	if err != nil {
+		return errors.New(fmt.Sprintf("writing to response: %s", err))
+	}
+	// log.Printf("wrote %d bytes to response", n)
+	return nil
+}
+
 func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 	sessionId := req.Header.Get("X-Session-Id")
 	if len(sessionId) < minSessionIdLength {
@@ -120,29 +147,23 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	body := http.MaxBytesReader(w, req.Body, maxPayloadLength)
-	_, err = io.Copy(session.Or, body)
+	err = transact(session, w, req)
 	if err != nil {
-		log.Printf("error copying body to ORPort: %s", err)
+		log.Print(err)
+		state.CloseSession(sessionId)
 		return
 	}
+}
 
-	buf := make([]byte, maxPayloadLength)
-	session.Or.SetReadDeadline(time.Now().Add(turnaroundDeadline))
-	n, err := session.Or.Read(buf)
-	if err != nil {
-		if e, ok := err.(net.Error); !ok || !e.Timeout() {
-			log.Printf("error reading from ORPort: %s", err)
-			return
-		}
+func (state *State) CloseSession(sessionId string) {
+	state.lock.Lock()
+	defer state.lock.Unlock()
+	log.Printf("closing session %q", sessionId)
+	session, ok := state.sessionMap[sessionId]
+	if ok {
+		session.Or.Close()
+		delete(state.sessionMap, sessionId)
 	}
-	// log.Printf("read %d bytes from ORPort: %q", n, buf[:n])
-	n, err = w.Write(buf[:n])
-	if err != nil {
-		log.Printf("error writing to response: %s", err)
-		return
-	}
-	// log.Printf("wrote %d bytes to response", n)
 }
 
 func (state *State) ExpireSessions() {
@@ -152,6 +173,7 @@ func (state *State) ExpireSessions() {
 		for sessionId, session := range state.sessionMap {
 			if session.Expired() {
 				log.Printf("deleting expired session %q", sessionId)
+				session.Or.Close()
 				delete(state.sessionMap, sessionId)
 			}
 		}
