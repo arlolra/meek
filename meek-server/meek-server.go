@@ -109,7 +109,7 @@ func (state *State) GetSession(sessionId string, req *http.Request) (*Session, e
 }
 
 func transact(session *Session, w http.ResponseWriter, req *http.Request) error {
-	body := http.MaxBytesReader(w, req.Body, maxPayloadLength)
+	body := http.MaxBytesReader(w, req.Body, maxPayloadLength+1)
 	_, err := io.Copy(session.Or, body)
 	if err != nil {
 		return errors.New(fmt.Sprintf("copying body to ORPort: %s", err))
