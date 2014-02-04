@@ -52,8 +52,10 @@ func copyLoop(conn net.Conn, u, host, sessionId string) error {
 	buf := make([]byte, maxPayloadLength)
 	var interval time.Duration
 
-	conn.SetReadDeadline(time.Now().Add(initPollInterval))
+	interval = initPollInterval
 	for {
+		conn.SetReadDeadline(time.Now().Add(interval))
+		// log.Printf("next poll %.6f s", interval.Seconds())
 		nr, readErr := conn.Read(buf)
 		// log.Printf("read from local: %q", buf[:nr])
 
@@ -79,16 +81,12 @@ func copyLoop(conn net.Conn, u, host, sessionId string) error {
 
 		if nw > 0 {
 			interval = initPollInterval
-		} else if interval < initPollInterval {
-			interval = initPollInterval
 		} else {
 			interval = time.Duration(float64(interval) * pollIntervalMultiplier)
 		}
 		if interval > maxPollInterval {
 			interval = maxPollInterval
 		}
-		// log.Printf("next poll %.6f s", interval.Seconds())
-		conn.SetReadDeadline(time.Now().Add(interval))
 	}
 
 	return nil
