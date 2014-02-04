@@ -78,7 +78,7 @@ func copyLoop(conn net.Conn, u, host, sessionId string) error {
 		}
 
 		if nw > 0 {
-			interval = 0
+			interval = initPollInterval
 		} else if interval < initPollInterval {
 			interval = initPollInterval
 		} else {
