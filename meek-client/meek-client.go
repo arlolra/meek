@@ -28,6 +28,8 @@ const maxPollInterval = 5 * time.Second
 const pollIntervalMultiplier = 1.5
 
 var ptInfo pt.ClientInfo
+var globalFront string
+var globalURL string
 
 // When a connection handler starts, +1 is written to this channel; when it
 // ends, -1 is written.
@@ -115,24 +117,31 @@ func handler(conn *pt.SocksConn) error {
 
 	sessionId := genSessionId()
 
+	// First url= check SOCKS arg, then --url option, then SOCKS target.
 	urlArg, ok := conn.Req.Args.Get("url")
-	var u *url.URL
 	if ok {
-		u, err = url.Parse(urlArg)
-		if err != nil {
-			return err
-		}
+	} else if globalURL != "" {
+		urlArg = globalURL
 	} else {
-		// If no url arg, use SOCKS target.
-		u = &url.URL{
+		urlArg = (&url.URL{
 			Scheme: "http",
 			Host:   conn.Req.Target,
 			Path:   "/",
-		}
+		}).String()
+	}
+	u, err := url.Parse(urlArg)
+	if err != nil {
+		return err
 	}
 
-	host := ""
+	// First check front= SOCKS arg, then --front option.
 	front, ok := conn.Req.Args.Get("front")
+	if ok {
+	} else if globalFront != "" {
+		front = globalFront
+		ok = true
+	}
+	host := ""
 	if ok {
 		host = u.Host
 		u.Host = front
@@ -164,7 +173,9 @@ func acceptLoop(ln *pt.SocksListener) error {
 func main() {
 	var logFilename string
 
+	flag.StringVar(&globalFront, "front", "", "front domain name if no front= SOCKS arg")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
+	flag.StringVar(&globalURL, "url", "", "URL to request if no url= SOCKS arg")
 	flag.Parse()
 
 	if logFilename != "" {
