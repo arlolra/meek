@@ -166,6 +166,7 @@ func acceptLoop(ln *pt.SocksListener) error {
 			}
 		}()
 	}
+	return nil
 }
 
 func main() {
