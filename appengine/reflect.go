@@ -65,6 +65,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer resp.Body.Close()
 	for _, key := range reflectedHeaderFields {
 		value := resp.Header.Get(key)
 		if value != "" {
