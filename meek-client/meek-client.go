@@ -35,7 +35,7 @@ var globalURL string
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
-func roundTrip(u, host, sessionId string, buf []byte) (*http.Response, error) {
+func roundTrip(buf []byte, u, host, sessionId string) (*http.Response, error) {
 	req, err := http.NewRequest("POST", u, bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
@@ -46,6 +46,20 @@ func roundTrip(u, host, sessionId string, buf []byte) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("X-Session-Id", sessionId)
 	return http.DefaultTransport.RoundTrip(req)
+}
+
+func sendRecv(buf []byte, conn net.Conn, u, host, sessionId string) (int64, error) {
+	resp, err := roundTrip(buf, u, host, sessionId)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, errors.New(fmt.Sprintf("status code was %d, not %d", resp.StatusCode, http.StatusOK))
+	}
+
+	return io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
 }
 
 func copyLoop(conn net.Conn, u, host, sessionId string) error {
@@ -59,15 +73,7 @@ func copyLoop(conn net.Conn, u, host, sessionId string) error {
 		nr, readErr := conn.Read(buf)
 		// log.Printf("read from local: %q", buf[:nr])
 
-		resp, err := roundTrip(u, host, sessionId, buf[:nr])
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != http.StatusOK {
-			return errors.New(fmt.Sprintf("status code was %d, not %d", resp.StatusCode, http.StatusOK))
-		}
-
-		nw, err := io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
+		nw, err := sendRecv(buf[:nr], conn, u, host, sessionId)
 		if err != nil {
 			return err
 		}
