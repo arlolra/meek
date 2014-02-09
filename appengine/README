@@ -1,0 +1,25 @@
+This component runs on Google App Engine. It lies between meek-client
+and meek-server. The App Engine component receives requests from the
+client and forwards them to the server, then receives responses from the
+server and forwards them to the client.
+
+You need the Go App Engine SDK in order to deploy the app.
+	https://developers.google.com/appengine/downloads#Google_App_Engine_SDK_for_Go
+
+To test locally, run
+	go_appengine/goapp serve
+The app will be running at http://127.0.0.1:8080/. To configure
+meek-client to talk to the locally running app, put this in torrc:
+	UseBridges 1
+	Bridge meek 0.0.2.0:1
+	ClientTransportPlugin meek exec ./meek-client --url=http://127.0.0.1:8080/ --log meek-client.log
+
+To deploy to App Engine, create a Google Account and use it to create a
+new app with a unique name. Edit the "application:" line of app.yaml to
+refer to your app's name. Run
+	go_appengine/goapp deploy
+To configure meek-client to talk to the App Engine app, give the app's
+name as the url and "www.google.com" as the front domain.
+	UseBridges 1
+	Bridge meek 0.0.2.0:1
+	ClientTransportPlugin meek exec ./meek-client --url=https://yourapphere.appspot.com/ --front=www.google.com --log meek-client.log
