@@ -10,6 +10,7 @@ import (
 )
 
 const forwardURL = "http://tor1.bamsoftware.com:7002/"
+var context appengine.Context
 
 func pathJoin(a, b string) string {
 	if len(a) > 0 && a[len(a)-1] == '/' {
@@ -50,14 +51,17 @@ func copyRequest(r *http.Request) (*http.Request, error) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	client := urlfetch.Client(appengine.NewContext(r))
+	context = appengine.NewContext(r)
+	client := urlfetch.Client(context)
 	fr, err := copyRequest(r)
 	if err != nil {
+		context.Errorf("copyRequest: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	resp, err := client.Transport.RoundTrip(fr)
 	if err != nil {
+		context.Errorf("RoundTrip: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -68,7 +72,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	n, err := io.Copy(w, resp.Body)
+	if err != nil {
+		context.Errorf("io.Copy after %d bytes: %s", n, err)
+	}
 }
 
 func init() {
