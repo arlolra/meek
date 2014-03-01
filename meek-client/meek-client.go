@@ -30,12 +30,19 @@ const pollIntervalMultiplier = 1.5
 var ptInfo pt.ClientInfo
 var globalFront string
 var globalURL string
+var globalHTTPProxyURL *url.URL
 
 // When a connection handler starts, +1 is written to this channel; when it
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
 func roundTrip(buf []byte, u, host, sessionId string) (*http.Response, error) {
+	tr := http.DefaultTransport
+	if globalHTTPProxyURL != nil {
+		tr = &http.Transport{
+			Proxy: http.ProxyURL(globalHTTPProxyURL),
+		}
+	}
 	req, err := http.NewRequest("POST", u, bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
@@ -45,7 +52,7 @@ func roundTrip(buf []byte, u, host, sessionId string) (*http.Response, error) {
 	}
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("X-Session-Id", sessionId)
-	return http.DefaultTransport.RoundTrip(req)
+	return tr.RoundTrip(req)
 }
 
 func sendRecv(buf []byte, conn net.Conn, u, host, sessionId string) (int64, error) {
@@ -176,9 +183,12 @@ func acceptLoop(ln *pt.SocksListener) error {
 }
 
 func main() {
+	var httpProxy string
 	var logFilename string
+	var err error
 
 	flag.StringVar(&globalFront, "front", "", "front domain name if no front= SOCKS arg")
+	flag.StringVar(&httpProxy, "http-proxy", "", "HTTP proxy URL (default from HTTP_PROXY environment variable")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
 	flag.StringVar(&globalURL, "url", "", "URL to request if no url= SOCKS arg")
 	flag.Parse()
@@ -192,7 +202,13 @@ func main() {
 		log.SetOutput(f)
 	}
 
-	var err error
+	if httpProxy != "" {
+		globalHTTPProxyURL, err = url.Parse(httpProxy)
+		if err != nil {
+			log.Fatalf("can't parse HTTP proxy URL: %s", err)
+		}
+	}
+
 	ptInfo, err = pt.ClientSetup([]string{ptMethodName})
 	if err != nil {
 		log.Fatalf("error in ClientSetup: %s", err)
