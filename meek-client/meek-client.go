@@ -36,27 +36,44 @@ var globalHTTPProxyURL *url.URL
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
-func roundTrip(buf []byte, u, host, sessionId string, httpProxyURL *url.URL) (*http.Response, error) {
+// RequestInfo encapsulates all the configuration used for a request–response
+// roundtrip, including variables that may come from SOCKS args or from the
+// command line.
+type RequestInfo struct {
+	// What to put in the X-Session-ID header.
+	SessionID string
+	// The URL to request.
+	URL *url.URL
+	// The Host header to put in the HTTP request (optional and may be
+	// different from the host name in URL).
+	Host string
+	// URL of an HTTP proxy to use. If nil, the default net/http library's
+	// behavior is used, which is to check the HTTP_PROXY and http_proxy
+	// environment for a proxy URL.
+	HTTPProxyURL *url.URL
+}
+
+func roundTrip(buf []byte, info *RequestInfo) (*http.Response, error) {
 	tr := http.DefaultTransport
-	if httpProxyURL != nil {
+	if info.HTTPProxyURL != nil {
 		tr = &http.Transport{
-			Proxy: http.ProxyURL(httpProxyURL),
+			Proxy: http.ProxyURL(info.HTTPProxyURL),
 		}
 	}
-	req, err := http.NewRequest("POST", u, bytes.NewReader(buf))
+	req, err := http.NewRequest("POST", info.URL.String(), bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
 	}
-	if host != "" {
-		req.Host = host
+	if info.Host != "" {
+		req.Host = info.Host
 	}
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("X-Session-Id", sessionId)
+	req.Header.Set("X-Session-Id", info.SessionID)
 	return tr.RoundTrip(req)
 }
 
-func sendRecv(buf []byte, conn net.Conn, u, host, sessionId string, httpProxyURL *url.URL) (int64, error) {
-	resp, err := roundTrip(buf, u, host, sessionId, httpProxyURL)
+func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
+	resp, err := roundTrip(buf, info)
 	if err != nil {
 		return 0, err
 	}
@@ -69,7 +86,7 @@ func sendRecv(buf []byte, conn net.Conn, u, host, sessionId string, httpProxyURL
 	return io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
 }
 
-func copyLoop(conn net.Conn, u, host, sessionId string, httpProxyURL *url.URL) error {
+func copyLoop(conn net.Conn, info *RequestInfo) error {
 	buf := make([]byte, maxPayloadLength)
 	var interval time.Duration
 
@@ -80,7 +97,7 @@ func copyLoop(conn net.Conn, u, host, sessionId string, httpProxyURL *url.URL) e
 		nr, readErr := conn.Read(buf)
 		// log.Printf("read from local: %q", buf[:nr])
 
-		nw, err := sendRecv(buf[:nr], conn, u, host, sessionId, httpProxyURL)
+		nw, err := sendRecv(buf[:nr], conn, info)
 		if err != nil {
 			return err
 		}
@@ -126,7 +143,8 @@ func handler(conn *pt.SocksConn) error {
 		return err
 	}
 
-	sessionId := genSessionId()
+	var info RequestInfo
+	info.SessionID = genSessionId()
 
 	// First check url= SOCKS arg, then --url option, then SOCKS target.
 	urlArg, ok := conn.Req.Args.Get("url")
@@ -140,7 +158,7 @@ func handler(conn *pt.SocksConn) error {
 			Path:   "/",
 		}).String()
 	}
-	u, err := url.Parse(urlArg)
+	info.URL, err = url.Parse(urlArg)
 	if err != nil {
 		return err
 	}
@@ -152,25 +170,23 @@ func handler(conn *pt.SocksConn) error {
 		front = globalFront
 		ok = true
 	}
-	host := ""
 	if ok {
-		host = u.Host
-		u.Host = front
+		info.Host = info.URL.Host
+		info.URL.Host = front
 	}
 
-	var httpProxyURL *url.URL
 	// First check http-proxy= SOCKS arg, then --http-proxy option.
 	httpProxy, ok := conn.Req.Args.Get("http-proxy")
 	if ok {
-		httpProxyURL, err = url.Parse(httpProxy)
+		info.HTTPProxyURL, err = url.Parse(httpProxy)
 		if err != nil {
 			return err
 		}
 	} else if globalHTTPProxyURL != nil {
-		httpProxyURL = globalHTTPProxyURL
+		info.HTTPProxyURL = globalHTTPProxyURL
 	}
 
-	return copyLoop(conn, u.String(), host, sessionId, httpProxyURL)
+	return copyLoop(conn, &info)
 }
 
 func acceptLoop(ln *pt.SocksListener) error {
