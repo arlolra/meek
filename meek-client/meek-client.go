@@ -128,7 +128,7 @@ func handler(conn *pt.SocksConn) error {
 
 	sessionId := genSessionId()
 
-	// First url= check SOCKS arg, then --url option, then SOCKS target.
+	// First check url= SOCKS arg, then --url option, then SOCKS target.
 	urlArg, ok := conn.Req.Args.Get("url")
 	if ok {
 	} else if globalURL != "" {
