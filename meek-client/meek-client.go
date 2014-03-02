@@ -28,9 +28,12 @@ const maxPollInterval = 5 * time.Second
 const pollIntervalMultiplier = 1.5
 
 var ptInfo pt.ClientInfo
-var globalFront string
-var globalURL string
-var globalHTTPProxyURL *url.URL
+
+var options struct {
+	URL          string
+	Front        string
+	HTTPProxyURL *url.URL
+}
 
 // When a connection handler starts, +1 is written to this channel; when it
 // ends, -1 is written.
@@ -149,8 +152,8 @@ func handler(conn *pt.SocksConn) error {
 	// First check url= SOCKS arg, then --url option, then SOCKS target.
 	urlArg, ok := conn.Req.Args.Get("url")
 	if ok {
-	} else if globalURL != "" {
-		urlArg = globalURL
+	} else if options.URL != "" {
+		urlArg = options.URL
 	} else {
 		urlArg = (&url.URL{
 			Scheme: "http",
@@ -166,8 +169,8 @@ func handler(conn *pt.SocksConn) error {
 	// First check front= SOCKS arg, then --front option.
 	front, ok := conn.Req.Args.Get("front")
 	if ok {
-	} else if globalFront != "" {
-		front = globalFront
+	} else if options.Front != "" {
+		front = options.Front
 		ok = true
 	}
 	if ok {
@@ -182,8 +185,8 @@ func handler(conn *pt.SocksConn) error {
 		if err != nil {
 			return err
 		}
-	} else if globalHTTPProxyURL != nil {
-		info.HTTPProxyURL = globalHTTPProxyURL
+	} else if options.HTTPProxyURL != nil {
+		info.HTTPProxyURL = options.HTTPProxyURL
 	}
 
 	return copyLoop(conn, &info)
@@ -215,10 +218,10 @@ func main() {
 	var logFilename string
 	var err error
 
-	flag.StringVar(&globalFront, "front", "", "front domain name if no front= SOCKS arg")
+	flag.StringVar(&options.Front, "front", "", "front domain name if no front= SOCKS arg")
 	flag.StringVar(&httpProxy, "http-proxy", "", "HTTP proxy URL (default from HTTP_PROXY environment variable")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
-	flag.StringVar(&globalURL, "url", "", "URL to request if no url= SOCKS arg")
+	flag.StringVar(&options.URL, "url", "", "URL to request if no url= SOCKS arg")
 	flag.Parse()
 
 	if logFilename != "" {
@@ -231,7 +234,7 @@ func main() {
 	}
 
 	if httpProxy != "" {
-		globalHTTPProxyURL, err = url.Parse(httpProxy)
+		options.HTTPProxyURL, err = url.Parse(httpProxy)
 		if err != nil {
 			log.Fatalf("can't parse HTTP proxy URL: %s", err)
 		}
