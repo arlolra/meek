@@ -36,11 +36,11 @@ var globalHTTPProxyURL *url.URL
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
-func roundTrip(buf []byte, u, host, sessionId string) (*http.Response, error) {
+func roundTrip(buf []byte, u, host, sessionId string, httpProxyURL *url.URL) (*http.Response, error) {
 	tr := http.DefaultTransport
-	if globalHTTPProxyURL != nil {
+	if httpProxyURL != nil {
 		tr = &http.Transport{
-			Proxy: http.ProxyURL(globalHTTPProxyURL),
+			Proxy: http.ProxyURL(httpProxyURL),
 		}
 	}
 	req, err := http.NewRequest("POST", u, bytes.NewReader(buf))
@@ -55,8 +55,8 @@ func roundTrip(buf []byte, u, host, sessionId string) (*http.Response, error) {
 	return tr.RoundTrip(req)
 }
 
-func sendRecv(buf []byte, conn net.Conn, u, host, sessionId string) (int64, error) {
-	resp, err := roundTrip(buf, u, host, sessionId)
+func sendRecv(buf []byte, conn net.Conn, u, host, sessionId string, httpProxyURL *url.URL) (int64, error) {
+	resp, err := roundTrip(buf, u, host, sessionId, httpProxyURL)
 	if err != nil {
 		return 0, err
 	}
@@ -69,7 +69,7 @@ func sendRecv(buf []byte, conn net.Conn, u, host, sessionId string) (int64, erro
 	return io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
 }
 
-func copyLoop(conn net.Conn, u, host, sessionId string) error {
+func copyLoop(conn net.Conn, u, host, sessionId string, httpProxyURL *url.URL) error {
 	buf := make([]byte, maxPayloadLength)
 	var interval time.Duration
 
@@ -80,7 +80,7 @@ func copyLoop(conn net.Conn, u, host, sessionId string) error {
 		nr, readErr := conn.Read(buf)
 		// log.Printf("read from local: %q", buf[:nr])
 
-		nw, err := sendRecv(buf[:nr], conn, u, host, sessionId)
+		nw, err := sendRecv(buf[:nr], conn, u, host, sessionId, httpProxyURL)
 		if err != nil {
 			return err
 		}
@@ -158,7 +158,19 @@ func handler(conn *pt.SocksConn) error {
 		u.Host = front
 	}
 
-	return copyLoop(conn, u.String(), host, sessionId)
+	var httpProxyURL *url.URL
+	// First check http-proxy= SOCKS arg, then --http-proxy option.
+	httpProxy, ok := conn.Req.Args.Get("http-proxy")
+	if ok {
+		httpProxyURL, err = url.Parse(httpProxy)
+		if err != nil {
+			return err
+		}
+	} else if globalHTTPProxyURL != nil {
+		httpProxyURL = globalHTTPProxyURL
+	}
+
+	return copyLoop(conn, u.String(), host, sessionId, httpProxyURL)
 }
 
 func acceptLoop(ln *pt.SocksListener) error {
