@@ -52,14 +52,16 @@ func copyRequest(r *http.Request) (*http.Request, error) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	context = appengine.NewContext(r)
-	client := urlfetch.Client(context)
 	fr, err := copyRequest(r)
 	if err != nil {
 		context.Errorf("copyRequest: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	resp, err := client.Transport.RoundTrip(fr)
+	transport := urlfetch.Transport{
+		Context: context,
+	}
+	resp, err := transport.RoundTrip(fr)
 	if err != nil {
 		context.Errorf("RoundTrip: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
