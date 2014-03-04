@@ -4,12 +4,15 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"appengine"
 	"appengine/urlfetch"
 )
 
 const forwardURL = "http://tor1.bamsoftware.com:7002/"
+// A timeout of 0 means to use the App Engine default (5 seconds).
+const urlFetchTimeout = 10 * time.Second
 var context appengine.Context
 
 func pathJoin(a, b string) string {
@@ -60,6 +63,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	transport := urlfetch.Transport{
 		Context: context,
+		// Despite the name, Transport.Deadline is really a timeout and
+		// not an absolute deadline as used in the net package. In
+		// other words it is a time.Duration, not a time.Time.
+		Deadline: urlFetchTimeout,
 	}
 	resp, err := transport.RoundTrip(fr)
 	if err != nil {
