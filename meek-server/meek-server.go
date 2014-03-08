@@ -94,7 +94,7 @@ func (state *State) GetSession(sessionId string, req *http.Request) (*Session, e
 
 	session := state.sessionMap[sessionId]
 	if session == nil {
-		log.Printf("unknown session id %q; creating new session", sessionId)
+		// log.Printf("unknown session id %q; creating new session", sessionId)
 
 		or, err := pt.DialOr(&ptInfo, req.RemoteAddr, ptMethodName)
 		if err != nil {
@@ -158,7 +158,7 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 func (state *State) CloseSession(sessionId string) {
 	state.lock.Lock()
 	defer state.lock.Unlock()
-	log.Printf("closing session %q", sessionId)
+	// log.Printf("closing session %q", sessionId)
 	session, ok := state.sessionMap[sessionId]
 	if ok {
 		session.Or.Close()
@@ -172,7 +172,7 @@ func (state *State) ExpireSessions() {
 		state.lock.Lock()
 		for sessionId, session := range state.sessionMap {
 			if session.Expired() {
-				log.Printf("deleting expired session %q", sessionId)
+				// log.Printf("deleting expired session %q", sessionId)
 				session.Or.Close()
 				delete(state.sessionMap, sessionId)
 			}
