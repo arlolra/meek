@@ -1,0 +1,2 @@
+content	meek-http-helper	chrome/content/
+overlay	chrome://browser/content/browser.xul	chrome://meek-http-helper/content/main.xul
