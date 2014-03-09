@@ -212,6 +212,7 @@ func startListener(network string, addr *net.TCPAddr) (net.Listener, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("listening with plain HTTP on %s", ln.Addr())
 	return startServer(ln)
 }
 
@@ -220,6 +221,7 @@ func startListenerTLS(network string, addr *net.TCPAddr, certFilename, keyFilena
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("listening with HTTPS on %s", ln.Addr())
 	return startServer(ln)
 }
 
@@ -296,7 +298,6 @@ func main() {
 				break
 			}
 			pt.Smethod(bindaddr.MethodName, ln.Addr())
-			log.Printf("listening on %s", ln.Addr())
 			listeners = append(listeners, ln)
 		default:
 			pt.SmethodError(bindaddr.MethodName, "no such method")
