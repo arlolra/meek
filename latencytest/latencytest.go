@@ -14,6 +14,7 @@ import (
 var urls = [...]string{
 	"http://meek.bamsoftware.com:7002/",
 	"https://meek.bamsoftware.com:7443/",
+	"http://83.212.83.23:7002/",
 	"http://www.googleusercontent.com/",
 	"https://www.googleusercontent.com/",
 }
