@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
@@ -181,8 +182,33 @@ func (state *State) ExpireSessions() {
 	}
 }
 
-func startListener(network string, addr *net.TCPAddr) (net.Listener, error) {
-	ln, err := net.ListenTCP(network, addr)
+func listenTLS(network string, addr *net.TCPAddr, certFilename, keyFilename string) (net.Listener, error) {
+	// This is cribbed from the source of net/http.Server.ListenAndServeTLS.
+	// We have to separate the Listen and Serve parts because we need to
+	// report the listening address before entering Serve (which is an
+	// infinite loop).
+	config := &tls.Config{}
+	config.NextProtos = []string{"http/1.1"}
+
+	var err error
+	config.Certificates = make([]tls.Certificate, 1)
+	config.Certificates[0], err = tls.LoadX509KeyPair(certFilename, keyFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := net.ListenTCP(network, addr)
+	if err != nil {
+		return nil, err
+	}
+
+	tlsListener := tls.NewListener(conn, config)
+
+	return tlsListener, nil
+}
+
+func startListener(network string, addr *net.TCPAddr, certFilename, keyFilename string) (net.Listener, error) {
+	ln, err := listenTLS(network, addr, certFilename, keyFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -202,9 +228,12 @@ func startListener(network string, addr *net.TCPAddr) (net.Listener, error) {
 }
 
 func main() {
+	var certFilename, keyFilename string
 	var logFilename string
 	var port int
 
+	flag.StringVar(&certFilename, "cert", "", "TLS certificate file")
+	flag.StringVar(&keyFilename, "key", "", "TLS private key file")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
 	flag.IntVar(&port, "port", 0, "port to listen on")
 	flag.Parse()
@@ -216,6 +245,10 @@ func main() {
 		}
 		defer f.Close()
 		log.SetOutput(f)
+	}
+
+	if certFilename == "" || keyFilename == "" {
+		log.Fatalf("The --cert and --key options are required.\n")
 	}
 
 	var err error
@@ -232,7 +265,7 @@ func main() {
 		}
 		switch bindaddr.MethodName {
 		case ptMethodName:
-			ln, err := startListener("tcp", bindaddr.Addr)
+			ln, err := startListener("tcp", bindaddr.Addr, certFilename, keyFilename)
 			if err != nil {
 				pt.SmethodError(bindaddr.MethodName, err.Error())
 				break
