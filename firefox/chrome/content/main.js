@@ -30,7 +30,6 @@ channel.asyncOpen(listener, null);
 // https://developer.mozilla.org/en-US/docs/Creating_Sandboxed_HTTP_Connections
 function StreamListener() {
 	this.onStartRequest = function(aRequest, aContext) {
-		console.log("onStartRequest\n");
 		dump("onStartRequest\n");
 	};
 	this.onStopRequest = function(aRequest, aContext, aStatus) {
