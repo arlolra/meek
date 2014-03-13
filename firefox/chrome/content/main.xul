@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-
-<overlay id="main" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-	<script src="chrome://meek-http-helper/content/main.js"></script>
-</overlay>
