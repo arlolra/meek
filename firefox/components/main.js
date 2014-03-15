@@ -32,6 +32,11 @@ MeekHTTPHelper.prototype = {
     classID: Components.ID("{e7bc2b9c-f454-49f3-a19f-14848a4d871d}"),
     contractID: "@bamsoftware.com/meek-http-helper;1",
 
+    // https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/XPCOMUtils.jsm#generateQI%28%29
+    QueryInterface: XPCOMUtils.generateQI([
+        Components.interfaces.nsIServerSocketListener,
+    ]),
+
     // nsIServerSocketListener implementation.
     onSocketAccepted: function(aServ, aTransport) {
         dump("onSocketAccepted host " + aTransport.host + "\n");
