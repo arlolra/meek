@@ -35,6 +35,7 @@ MeekHTTPHelper.prototype = {
     // https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/XPCOMUtils.jsm#generateQI%28%29
     QueryInterface: XPCOMUtils.generateQI([
         Components.interfaces.nsIServerSocketListener,
+        Components.interfaces.nsIObserver,
     ]),
 
     // nsIServerSocketListener implementation.
