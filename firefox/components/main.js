@@ -66,7 +66,7 @@ MeekHTTPHelper.prototype = {
 
 // https://developer.mozilla.org/en-US/docs/Creating_Sandboxed_HTTP_Connections
 MeekHTTPHelper.prototype.httpResponseStreamListener = function() {
-}
+};
 MeekHTTPHelper.prototype.httpResponseStreamListener.prototype = {
     // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIRequestObserver
     onStartRequest: function(aRequest, aContext) {
