@@ -1,3 +1,33 @@
+// This is an extension that allows external programs to make HTTP requests
+// using the browser's networking libraries.
+//
+// The extension opens a TCP socket listening on localhost (port 7000). When it
+// receives a connection, it reads a 4-byte big-endian length field, then tries
+// to read that many bytes of data. The data is UTF-8–encoded JSON, having the
+// format
+//  {
+//      "method": "POST",
+//      "url": "https://www.google.com/",
+//      "header": {
+//          "Host": "meek-reflect.appspot.com",
+//          "X-Session-Id": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}
+//      }
+//  }
+// The extension makes the request as commanded. It returns the response to the
+// client as a JSON blob, preceded by a 4-byte length as before. If successful,
+// the response looks like
+//  {
+//      "status": 200,
+//      "body": "...base64..."
+//  }
+// If there is a network error, the "error" key will be defined. A 404 response
+// or similar from the target web server is not considered such an error.
+//  {
+//      "error": "NS_ERROR_UNKNOWN_HOST"
+//  }
+// The extension closes the connectionn after each transaction, and the client
+// must reconnect to do another request.
+
 // https://developer.mozilla.org/en-US/docs/How_to_Build_an_XPCOM_Component_in_Javascript#Using_XPCOMUtils
 // https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/XPCOMUtils.jsm
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
