@@ -25,7 +25,7 @@
 //  {
 //      "error": "NS_ERROR_UNKNOWN_HOST"
 //  }
-// The extension closes the connectionn after each transaction, and the client
+// The extension closes the connection after each transaction, and the client
 // must reconnect to do another request.
 
 // https://developer.mozilla.org/en-US/docs/How_to_Build_an_XPCOM_Component_in_Javascript#Using_XPCOMUtils
