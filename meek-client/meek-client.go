@@ -37,6 +37,7 @@ var options struct {
 	URL          string
 	Front        string
 	HTTPProxyURL *url.URL
+	HelperAddr   *net.TCPAddr
 }
 
 // When a connection handler starts, +1 is written to this channel; when it
@@ -60,7 +61,7 @@ type RequestInfo struct {
 	HTTPProxyURL *url.URL
 }
 
-func roundTrip(buf []byte, info *RequestInfo) (*http.Response, error) {
+func roundTripWithHTTP(buf []byte, info *RequestInfo) (*http.Response, error) {
 	tr := http.DefaultTransport
 	if info.HTTPProxyURL != nil {
 		tr = &http.Transport{
@@ -94,7 +95,7 @@ type JSONResponse struct {
 
 // Ask a locally running browser extension to make the request for us.
 func roundTripWithHelper(buf []byte, info *RequestInfo) (*http.Response, error) {
-	s, err := net.Dial("tcp", "127.0.0.1:7000")
+	s, err := net.DialTCP("tcp", nil, options.HelperAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +166,11 @@ func roundTripWithHelper(buf []byte, info *RequestInfo) (*http.Response, error) 
 }
 
 func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
-	resp, err := roundTripWithHelper(buf, info)
+	roundTrip := roundTripWithHTTP
+	if options.HelperAddr != nil {
+		roundTrip = roundTripWithHelper
+	}
+	resp, err := roundTrip(buf, info)
 	if err != nil {
 		return 0, err
 	}
@@ -303,11 +308,13 @@ func acceptLoop(ln *pt.SocksListener) error {
 }
 
 func main() {
+	var helperAddr string
 	var httpProxy string
 	var logFilename string
 	var err error
 
 	flag.StringVar(&options.Front, "front", "", "front domain name if no front= SOCKS arg")
+	flag.StringVar(&helperAddr, "helper", "", "address of HTTP helper (browser extension)")
 	flag.StringVar(&httpProxy, "http-proxy", "", "HTTP proxy URL (default from HTTP_PROXY environment variable")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
 	flag.StringVar(&options.URL, "url", "", "URL to request if no url= SOCKS arg")
@@ -320,6 +327,17 @@ func main() {
 		}
 		defer f.Close()
 		log.SetOutput(f)
+	}
+
+	if helperAddr != "" && httpProxy != "" {
+		log.Fatalf("--helper and --http-proxy can't be used together")
+	}
+
+	if helperAddr != "" {
+		options.HelperAddr, err = net.ResolveTCPAddr("tcp", helperAddr)
+		if err != nil {
+			log.Fatalf("can't resolve helper address: %s", err)
+		}
 	}
 
 	if httpProxy != "" {
