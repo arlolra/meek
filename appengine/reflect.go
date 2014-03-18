@@ -10,7 +10,7 @@ import (
 	"appengine/urlfetch"
 )
 
-const forwardURL = "http://83.212.83.23:7002/"
+const forwardURL = "http://meek.bamsoftware.com:7443/"
 // A timeout of 0 means to use the App Engine default (5 seconds).
 const urlFetchTimeout = 10 * time.Second
 var context appengine.Context
