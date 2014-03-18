@@ -30,6 +30,8 @@ const initPollInterval = 100 * time.Millisecond
 const maxPollInterval = 5 * time.Second
 const pollIntervalMultiplier = 1.5
 const maxHelperResponseLength = 10000000
+const helperReadTimeout = 60 * time.Second
+const helperWriteTimeout = 2 * time.Second
 
 var ptInfo pt.ClientInfo
 
@@ -119,6 +121,7 @@ func roundTripWithHelper(buf []byte, info *RequestInfo) (*http.Response, error) 
 	// log.Printf("encoded %s", encReq)
 
 	// Send the request.
+	s.SetWriteDeadline(time.Now().Add(helperWriteTimeout))
 	err = binary.Write(s, binary.BigEndian, uint32(len(encReq)))
 	if err != nil {
 		return nil, err
@@ -130,6 +133,7 @@ func roundTripWithHelper(buf []byte, info *RequestInfo) (*http.Response, error) 
 
 	// Read the response.
 	var length uint32
+	s.SetReadDeadline(time.Now().Add(helperReadTimeout))
 	err = binary.Read(s, binary.BigEndian, &length)
 	if err != nil {
 		return nil, err
