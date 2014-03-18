@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -26,6 +29,7 @@ const maxPayloadLength = 0x10000
 const initPollInterval = 100 * time.Millisecond
 const maxPollInterval = 5 * time.Second
 const pollIntervalMultiplier = 1.5
+const maxHelperResponseLength = 10000000
 
 var ptInfo pt.ClientInfo
 
@@ -75,8 +79,93 @@ func roundTrip(buf []byte, info *RequestInfo) (*http.Response, error) {
 	return tr.RoundTrip(req)
 }
 
+type JSONRequest struct {
+	Method string            `json:"method,omitempty"`
+	URL    string            `json:"url,omitempty"`
+	Header map[string]string `json:"header,omitempty"`
+	Body   []byte            `json:"body,omitempty"`
+}
+
+type JSONResponse struct {
+	Error  string `json:"error,omitempty"`
+	Status int    `json:"status"`
+	Body   []byte `json:"body"`
+}
+
+// Ask a locally running browser extension to make the request for us.
+func roundTripWithHelper(buf []byte, info *RequestInfo) (*http.Response, error) {
+	s, err := net.Dial("tcp", "127.0.0.1:7000")
+	if err != nil {
+		return nil, err
+	}
+	defer s.Close()
+
+	// Encode our JSON.
+	req := JSONRequest{
+		Method: "POST",
+		URL:    info.URL.String(),
+		Header: make(map[string]string),
+		Body:   buf,
+	}
+	req.Header["X-Session-Id"] = info.SessionID
+	if info.Host != "" {
+		req.Header["Host"] = info.Host
+	}
+	encReq, err := json.Marshal(&req)
+	if err != nil {
+		return nil, err
+	}
+	// log.Printf("encoded %s", encReq)
+
+	// Send the request.
+	err = binary.Write(s, binary.BigEndian, uint32(len(encReq)))
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.Write(encReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the response.
+	var length uint32
+	err = binary.Read(s, binary.BigEndian, &length)
+	if err != nil {
+		return nil, err
+	}
+	if length > maxHelperResponseLength {
+		return nil, errors.New(fmt.Sprintf("helper's returned data is too big (%d > %d)",
+			length, maxHelperResponseLength))
+	}
+	encResp := make([]byte, length)
+	_, err = io.ReadFull(s, encResp)
+	if err != nil {
+		return nil, err
+	}
+	// log.Printf("received %s", encResp)
+
+	// Decode their JSON.
+	var jsonResp JSONResponse
+	err = json.Unmarshal(encResp, &jsonResp)
+	if err != nil {
+		return nil, err
+	}
+	if jsonResp.Error != "" {
+		return nil, errors.New(fmt.Sprintf("helper returned error: %s", jsonResp.Error))
+	}
+
+	// Mock up an HTTP response.
+	resp := http.Response{
+		Status:        http.StatusText(jsonResp.Status),
+		StatusCode:    jsonResp.Status,
+		Body:          ioutil.NopCloser(bytes.NewReader(jsonResp.Body)),
+		ContentLength: int64(len(jsonResp.Body)),
+	}
+	return &resp, nil
+}
+
 func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
-	resp, err := roundTrip(buf, info)
+	resp, err := roundTripWithHelper(buf, info)
 	if err != nil {
 		return 0, err
 	}
