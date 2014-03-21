@@ -113,7 +113,6 @@ MeekHTTPHelper.lookupStatus = function(status) {
 // on the Internet, and writes the result back to the socket. Error handling
 // happens within callbacks.
 MeekHTTPHelper.LocalConnectionHandler = function(transport) {
-    dump("LocalConnectionHandler\n");
     this.transport = transport;
     this.requestreader = null;
     this.channel = null;
@@ -122,12 +121,11 @@ MeekHTTPHelper.LocalConnectionHandler = function(transport) {
 };
 MeekHTTPHelper.LocalConnectionHandler.prototype = {
     readRequest: function(callback) {
-        dump("readRequest\n");
         this.requestreader = new MeekHTTPHelper.RequestReader(this.transport, this.makeRequest.bind(this));
     },
 
     makeRequest: function(req) {
-        dump("makeRequest " + JSON.stringify(req) + "\n");
+        // dump("makeRequest " + JSON.stringify(req) + "\n");
         if (!this.requestOk(req)) {
             this.transport.close(0);
             return;
@@ -139,7 +137,6 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
             .QueryInterface(Components.interfaces.nsIHttpChannel);
         if (req.header !== undefined) {
             for (var key in req.header) {
-                dump("setting header " + key + ": " + req.header[key] + "\n");
                 this.channel.setRequestHeader(key, req.header[key], false);
             }
         }
@@ -161,7 +158,7 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
     },
 
     returnResponse: function(resp) {
-        dump("returnResponse " + JSON.stringify(resp) + "\n");
+        // dump("returnResponse " + JSON.stringify(resp) + "\n");
         outputStream = this.transport.openOutputStream(
             Components.interfaces.nsITransport.OPEN_BLOCKING | Components.interfaces.nsITransport.OPEN_UNBUFFERED, 0, 0);
         var output = Components.classes["@mozilla.org/binaryoutputstream;1"]
@@ -215,7 +212,6 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
 // calls the given callback with the request as an argument. In case of error,
 // the transport is closed and the callback is not called.
 MeekHTTPHelper.RequestReader = function(transport, callback) {
-    dump("RequestReader\n");
     this.transport = transport;
     this.callback = callback;
 
@@ -336,7 +332,7 @@ MeekHTTPHelper.HttpStreamListener.prototype = {
 
     // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIStreamListener
     onDataAvailable: function(request, context, stream, sourceOffset, length) {
-        dump("onDataAvailable " + length + " bytes\n");
+        // dump("onDataAvailable " + length + " bytes\n");
         if (this.length + length > 1000000) {
             request.cancel(Components.results.NS_ERROR_ILLEGAL_VALUE);
             return;
