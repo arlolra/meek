@@ -40,6 +40,8 @@ function MeekHTTPHelper() {
 
     const LOCAL_PORT = 7000;
 
+    this.handlers = [];
+
     // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
     var serverSocket = Components.classes["@mozilla.org/network/server-socket;1"]
         .createInstance(Components.interfaces.nsIServerSocket);
@@ -60,7 +62,9 @@ MeekHTTPHelper.prototype = {
     // nsIServerSocketListener implementation.
     onSocketAccepted: function(server, transport) {
         dump("onSocketAccepted " + transport.host + ":" + transport.port + "\n");
-        new MeekHTTPHelper.LocalConnectionHandler(transport);
+        // Stop referencing handlers that are no longer alive.
+        this.handlers = this.handlers.filter(function(h) { return h.transport.isAlive(); });
+        this.handlers.push(new MeekHTTPHelper.LocalConnectionHandler(transport));
     },
     onStopListening: function(server, status) {
         dump("onStopListening status " + status + "\n");
@@ -111,12 +115,15 @@ MeekHTTPHelper.lookupStatus = function(status) {
 MeekHTTPHelper.LocalConnectionHandler = function(transport) {
     dump("LocalConnectionHandler\n");
     this.transport = transport;
+    this.requestreader = null;
+    this.channel = null;
+    this.listener = null;
     this.readRequest(this.makeRequest.bind(this));
 };
 MeekHTTPHelper.LocalConnectionHandler.prototype = {
     readRequest: function(callback) {
         dump("readRequest\n");
-        new MeekHTTPHelper.RequestReader(this.transport, this.makeRequest.bind(this));
+        this.requestreader = new MeekHTTPHelper.RequestReader(this.transport, this.makeRequest.bind(this));
     },
 
     makeRequest: function(req) {
@@ -128,12 +135,12 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
         var uri = MeekHTTPHelper.ioService.newURI(req.url, null, null);
         // Construct an HTTP channel with the proxy bypass.
         // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIHttpChannel
-        var channel = MeekHTTPHelper.httpProtocolHandler.newProxiedChannel(uri, MeekHTTPHelper.directProxyInfo, 0, null)
+        this.channel = MeekHTTPHelper.httpProtocolHandler.newProxiedChannel(uri, MeekHTTPHelper.directProxyInfo, 0, null)
             .QueryInterface(Components.interfaces.nsIHttpChannel);
         if (req.header !== undefined) {
             for (var key in req.header) {
                 dump("setting header " + key + ": " + req.header[key] + "\n");
-                channel.setRequestHeader(key, req.header[key], false);
+                this.channel.setRequestHeader(key, req.header[key], false);
             }
         }
         if (req.body !== undefined) {
@@ -141,15 +148,16 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
             let inputStream = Components.classes["@mozilla.org/io/string-input-stream;1"]
                 .createInstance(Components.interfaces.nsIStringInputStream);
             inputStream.setData(body, body.length);
-            let uploadChannel = channel.QueryInterface(Components.interfaces.nsIUploadChannel);
+            let uploadChannel = this.channel.QueryInterface(Components.interfaces.nsIUploadChannel);
             uploadChannel.setUploadStream(inputStream, "application/octet-stream", body.length);
         }
         // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIUploadChannel
         // says we must set requestMethod after calling setUploadStream.
-        channel.requestMethod = req.method;
-        channel.redirectionLimit = 0;
+        this.channel.requestMethod = req.method;
+        this.channel.redirectionLimit = 0;
 
-        channel.asyncOpen(new MeekHTTPHelper.HttpStreamListener(this.returnResponse.bind(this)), channel);
+        this.listener = new MeekHTTPHelper.HttpStreamListener(this.returnResponse.bind(this));
+        this.channel.asyncOpen(this.listener, this.channel);
     },
 
     returnResponse: function(resp) {
