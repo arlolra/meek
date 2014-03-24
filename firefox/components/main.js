@@ -37,16 +37,7 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 // nsIServerSocketListener.
 function MeekHTTPHelper() {
     this.wrappedJSObject = this;
-
-    const LOCAL_PORT = 7000;
-
     this.handlers = [];
-
-    // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
-    var serverSocket = Components.classes["@mozilla.org/network/server-socket;1"]
-        .createInstance(Components.interfaces.nsIServerSocket);
-    serverSocket.init(LOCAL_PORT, true, -1);
-    serverSocket.asyncListen(this);
 }
 MeekHTTPHelper.prototype = {
     classDescription: "meek HTTP helper component",
@@ -55,9 +46,21 @@ MeekHTTPHelper.prototype = {
 
     // https://developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/XPCOMUtils.jsm#generateQI%28%29
     QueryInterface: XPCOMUtils.generateQI([
-        Components.interfaces.nsIServerSocketListener,
         Components.interfaces.nsIObserver,
+        Components.interfaces.nsIServerSocketListener,
     ]),
+
+    // nsIObserver implementation.
+    observe: function(subject, topic, data) {
+        if (topic !== "profile-after-change")
+            return
+
+        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
+        var serverSocket = Components.classes["@mozilla.org/network/server-socket;1"]
+            .createInstance(Components.interfaces.nsIServerSocket);
+        serverSocket.init(MeekHTTPHelper.LOCAL_PORT, true, -1);
+        serverSocket.asyncListen(this);
+    },
 
     // nsIServerSocketListener implementation.
     onSocketAccepted: function(server, transport) {
@@ -73,6 +76,7 @@ MeekHTTPHelper.prototype = {
 
 // Global variables and functions.
 
+MeekHTTPHelper.LOCAL_PORT = 7000;
 MeekHTTPHelper.LOCAL_READ_TIMEOUT = 2.0;
 MeekHTTPHelper.LOCAL_WRITE_TIMEOUT = 2.0;
 
