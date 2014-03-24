@@ -55,11 +55,23 @@ MeekHTTPHelper.prototype = {
         if (topic !== "profile-after-change")
             return
 
-        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
-        var serverSocket = Components.classes["@mozilla.org/network/server-socket;1"]
-            .createInstance(Components.interfaces.nsIServerSocket);
-        serverSocket.init(MeekHTTPHelper.LOCAL_PORT, true, -1);
-        serverSocket.asyncListen(this);
+        try {
+            // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
+            var serverSocket = Components.classes["@mozilla.org/network/server-socket;1"]
+                .createInstance(Components.interfaces.nsIServerSocket);
+            // Listen on loopback only, with default backlog.
+            serverSocket.init(MeekHTTPHelper.LOCAL_PORT, true, -1);
+            serverSocket.asyncListen(this);
+
+            // Block forever.
+            var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
+                .getService(Components.interfaces.nsIPromptService);
+            prompts.confirm(null, "Query", "Get down, get funky?");
+        } finally {
+            var app = Components.classes["@mozilla.org/toolkit/app-startup;1"]
+                .getService(Components.interfaces.nsIAppStartup);
+            app.quit(app.eForceQuit);
+        }
     },
 
     // nsIServerSocketListener implementation.
