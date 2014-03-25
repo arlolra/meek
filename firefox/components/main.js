@@ -59,9 +59,13 @@ MeekHTTPHelper.prototype = {
             // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
             var serverSocket = Components.classes["@mozilla.org/network/server-socket;1"]
                 .createInstance(Components.interfaces.nsIServerSocket);
-            // Listen on loopback only, with default backlog.
-            serverSocket.init(MeekHTTPHelper.LOCAL_PORT, true, -1);
+            // Listen on an ephemeral port, loopback only, with default backlog.
+            serverSocket.init(-1, true, -1);
             serverSocket.asyncListen(this);
+            // This output line is used by a controller program to find out what
+            // address the helper is listening on. For the dump call to have any
+            // effect, the pref browser.dom.window.dump.enabled must be true.
+            dump("meek-http-helper: listen 127.0.0.1:" + serverSocket.port + "\n");
 
             // Block forever.
             var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
@@ -88,7 +92,6 @@ MeekHTTPHelper.prototype = {
 
 // Global variables and functions.
 
-MeekHTTPHelper.LOCAL_PORT = 7000;
 MeekHTTPHelper.LOCAL_READ_TIMEOUT = 2.0;
 MeekHTTPHelper.LOCAL_WRITE_TIMEOUT = 2.0;
 
