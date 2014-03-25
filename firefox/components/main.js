@@ -92,19 +92,6 @@ MeekHTTPHelper.LOCAL_PORT = 7000;
 MeekHTTPHelper.LOCAL_READ_TIMEOUT = 2.0;
 MeekHTTPHelper.LOCAL_WRITE_TIMEOUT = 2.0;
 
-// A "direct" nsIProxyInfo that bypasses the default proxy.
-// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIProtocolProxyService
-// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIProxyInfo
-MeekHTTPHelper.directProxyInfo = Components.classes["@mozilla.org/network/protocol-proxy-service;1"]
-    .getService(Components.interfaces.nsIProtocolProxyService)
-    .newProxyInfo("direct", "", 0, 0, 0xffffffff, null);
-
-// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIIOService
-MeekHTTPHelper.ioService = Components.classes["@mozilla.org/network/io-service;1"]
-    .getService(Components.interfaces.nsIIOService);
-MeekHTTPHelper.httpProtocolHandler = MeekHTTPHelper.ioService.getProtocolHandler("http")
-    .QueryInterface(Components.interfaces.nsIHttpProtocolHandler);
-
 // Set the transport to time out at the given absolute deadline.
 MeekHTTPHelper.refreshDeadline = function(transport, deadline) {
     var timeout;
@@ -146,10 +133,10 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
             this.transport.close(0);
             return;
         }
-        var uri = MeekHTTPHelper.ioService.newURI(req.url, null, null);
-        // Construct an HTTP channel with the proxy bypass.
-        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIHttpChannel
-        this.channel = MeekHTTPHelper.httpProtocolHandler.newProxiedChannel(uri, MeekHTTPHelper.directProxyInfo, 0, null)
+        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIIOService
+        var ioService = Components.classes["@mozilla.org/network/io-service;1"]
+            .getService(Components.interfaces.nsIIOService);
+        this.channel = ioService.newChannel(req.url, null, null)
             .QueryInterface(Components.interfaces.nsIHttpChannel);
         if (req.header !== undefined) {
             for (var key in req.header) {
