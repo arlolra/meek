@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "meek-browser-extension",
+  "minimum_chrome_version": "24",
+  "version": "0.1",
+
+  "permissions": [
+    "notifications",
+    "alarms",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ],
+
+  "background": {
+      "scripts": ["background.js"],
+      "persistent": true
+  }
+}
