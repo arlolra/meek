@@ -65,7 +65,3 @@ chrome.runtime.onMessageExternal.addListener(function(request, header, sendRespo
 
   xhr.send(body);
 });
-
-function onReceiveXHR(xhr) {
-  console.log(xhr.responseText);
-}

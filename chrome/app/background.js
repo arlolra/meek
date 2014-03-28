@@ -5,11 +5,10 @@ chrome.alarms.onAlarm.addListener(function(alarm) { console.info("alarm name = "
 
 const IP = "127.0.0.1";
 const PORT = 7000;
-const EXTENSION_ID = "epmfkpbifhkdhcedgfppmeeoonjenkee";
+const EXTENSION_ID = "epmfkpbifhkdhcedgfppmeeoonjenkee"; //FIXME: Hardcoded extension ID
 
 const STATE_READING_LENGTH = 1;
 const STATE_READING_OBJECT = 2;
-const STATE_DONE = 3;
 
 var serverSocketId;
 var state = STATE_READING_LENGTH;
