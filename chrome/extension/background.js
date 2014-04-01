@@ -37,7 +37,7 @@ chrome.runtime.onMessageExternal.addListener(function(request, header, sendRespo
   xhr.onreadystatechange = function() {
     if (xhr.readyState == 4) {
       chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeadersCallback);
-      var response = {status: xhr.status, body: xhr.responseText };
+      var response = {status: xhr.status, body: btoa(xhr.responseText) };
       sendResponse(response);
     }
   };
@@ -55,7 +55,9 @@ chrome.runtime.onMessageExternal.addListener(function(request, header, sendRespo
   }
   var body = null;
   if (request.body != undefined) {
-    body = request.body;
+    body = atob(request.body);
+    xhr.setRequestHeader("Content-Type", "application/octet-stream");
+    console.log(body);
   }
 
   chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeadersCallback, {
