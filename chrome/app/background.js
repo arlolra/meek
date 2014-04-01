@@ -20,6 +20,7 @@ chrome.sockets.tcpServer.create({}, function(createInfo) {
 });
 
 function listenAndAccept(socketId) {
+  console.log("listenAndAccept " + socketId);
   chrome.sockets.tcpServer.listen(socketId,
     IP, PORT, function(resultCode) {
       onListenCallback(socketId, resultCode)
@@ -27,6 +28,7 @@ function listenAndAccept(socketId) {
 }
 
 function onListenCallback(socketId, resultCode) {
+  console.log("onListenCallback " + socketId);
   if (resultCode < 0) {
     console.log("Error listening:" +
       chrome.runtime.lastError.message);
@@ -37,9 +39,10 @@ function onListenCallback(socketId, resultCode) {
 }
 
 function onAccept(info) {
+  console.log("onAccept " + JSON.stringify(info));
   if (info.socketId != serverSocketId)
     return;
-  console.log("Client connected.");
+
   chrome.sockets.tcp.onReceive.addListener(onReceive);
   chrome.sockets.tcp.setPaused(info.clientSocketId, false);
 }
@@ -52,7 +55,7 @@ function readIntoBuf(data) {
 }
 
 function onReceive(info) {
-  console.log("Data received.");
+  console.log("onReceive " + JSON.stringify(info));
   var data = info.data;
   switch (state) {
   case STATE_READING_LENGTH:
@@ -102,7 +105,7 @@ function returnResponse(response, client_socket) {
 
   chrome.sockets.tcp.send(client_socket, buf.buffer, function(info) {
     if (info.resultCode != 0)
-      console.log("Send failed");
+      console.log("Send failed " + info.resultCode);
   });
 }
 
