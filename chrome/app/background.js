@@ -36,6 +36,13 @@ function onListenCallback(socketId, resultCode) {
   }
   serverSocketId = socketId;
   chrome.sockets.tcpServer.onAccept.addListener(onAccept);
+  chrome.sockets.tcpServer.onAcceptError.addListener(function(info) {
+    console.log("onAcceptError " + JSON.stringify(info));
+  });
+  chrome.sockets.tcp.onReceive.addListener(onReceive);
+  chrome.sockets.tcp.onReceiveError.addListener(function(info) {
+    console.log("onReceiveError " + JSON.stringify(info));
+  });
 }
 
 function onAccept(info) {
@@ -43,19 +50,19 @@ function onAccept(info) {
   if (info.socketId != serverSocketId)
     return;
 
-  chrome.sockets.tcp.onReceive.addListener(onReceive);
   chrome.sockets.tcp.setPaused(info.clientSocketId, false);
 }
 
 function readIntoBuf(data) {
+  console.log("readIntoBuf " + "bytesToRead: " + bytesToRead + ", datalen: " + data.byteLength + ", buflen: " + buf.length);
   var n = Math.min(data.byteLength, bytesToRead);
-  buf.subarray(buf.length - bytesToRead, n).set(new Uint8Array(data.slice(0, n)));
+  buf.set(new Uint8Array(data.slice(0, n)), buf.length - bytesToRead);
   bytesToRead -= n;
   return data.slice(n);
 }
 
 function onReceive(info) {
-  console.log("onReceive " + JSON.stringify(info));
+  console.log("onReceive " + JSON.stringify(info) + " len: " + info.data.byteLength);
   var data = info.data;
   switch (state) {
   case STATE_READING_LENGTH:
@@ -85,13 +92,22 @@ function onReceive(info) {
   }
 }
 
-function makeRequest(request, client_socket) {
-  chrome.runtime.sendMessage(EXTENSION_ID, request, function(response) {
-    returnResponse(response, client_socket);
+function makeRequest(request, socketId) {
+  console.log("makeRequest " + JSON.stringify(request));
+
+  port = chrome.runtime.connect(EXTENSION_ID);
+  port.onMessage.addListener(function(response) {
+    returnResponse(response, socketId);
+    port.disconnect();
   });
+  port.onDisconnect.addListener(function() {
+    console.log("onDisconnect");
+  });
+  port.postMessage(request);
 }
 
-function returnResponse(response, client_socket) {
+function returnResponse(response, socketId) {
+  console.log("returnResponse " + JSON.stringify(response));
   var str = JSON.stringify(response);
   var b = str2ab(str);
 
@@ -103,7 +119,8 @@ function returnResponse(response, client_socket) {
   buf[3] = len & 0xff;
   buf.set(new Uint8Array(b), 4);
 
-  chrome.sockets.tcp.send(client_socket, buf.buffer, function(info) {
+  chrome.sockets.tcp.send(socketId, buf.buffer, function(info) {
+    console.log("send " + socketId);
     if (info.resultCode != 0)
       console.log("Send failed " + info.resultCode);
   });
