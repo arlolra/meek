@@ -252,6 +252,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("can't resolve helper address: %s", err)
 		}
+		log.Printf("using helper on %s", options.HelperAddr)
 	}
 
 	if httpProxy != "" {
