@@ -80,13 +80,13 @@ MeekHTTPHelper.prototype = {
 
     // nsIServerSocketListener implementation.
     onSocketAccepted: function(server, transport) {
-        dump("onSocketAccepted " + transport.host + ":" + transport.port + "\n");
+        // dump("onSocketAccepted " + transport.host + ":" + transport.port + "\n");
         // Stop referencing handlers that are no longer alive.
         this.handlers = this.handlers.filter(function(h) { return h.transport.isAlive(); });
         this.handlers.push(new MeekHTTPHelper.LocalConnectionHandler(transport));
     },
     onStopListening: function(server, status) {
-        dump("onStopListening status " + status + "\n");
+        // dump("onStopListening status " + status + "\n");
     },
 };
 
@@ -317,10 +317,10 @@ MeekHTTPHelper.HttpStreamListener = function(callback) {
 MeekHTTPHelper.HttpStreamListener.prototype = {
     // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIRequestObserver
     onStartRequest: function(req, context) {
-        dump("onStartRequest\n");
+        // dump("onStartRequest\n");
     },
     onStopRequest: function(req, context, status) {
-        dump("onStopRequest " + status + "\n");
+        // dump("onStopRequest " + status + "\n");
         var resp = {
             status: context.responseStatus,
         };
