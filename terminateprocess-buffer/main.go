@@ -1,5 +1,5 @@
 // This program is designed to sit between tor and a transport plugin on
-// Windows. On Windows, transport plugins are killed with a ProcessTerminate,
+// Windows. On Windows, transport plugins are killed with a TerminateProcess,
 // which doesn't give them a chance to clean up before exiting.
 // https://trac.torproject.org/projects/tor/ticket/9330
 // The idea of this program is that the transport plugin can read from its
