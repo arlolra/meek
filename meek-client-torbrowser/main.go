@@ -109,6 +109,13 @@ func runMeekClient(helperAddr string) (cmd *exec.Cmd, err error) {
 func main() {
 	var err error
 
+	f, err := os.OpenFile("meek-client-torbrowser.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
