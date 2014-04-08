@@ -148,17 +148,19 @@ func main() {
 	}
 	defer logKill(meekClientCmd.Process)
 
-	// On Windows, we don't get a SIGINT or SIGTERM, rather we are killed
-	// without a chance to clean up our subprocesses. When run inside
-	// terminateprocess-buffer, it is instead terminateprocess-buffer that
-	// is killed, and we can detect that event by that our stdin gets
-	// closed.
-	// https://trac.torproject.org/projects/tor/ticket/9330
-	go func() {
-		io.Copy(ioutil.Discard, os.Stdin)
-		log.Printf("synthesizing SIGTERM because of stdin close")
-		sigChan <- syscall.SIGTERM
-	}()
+	if exitOnStdinEOF {
+		// On Windows, we don't get a SIGINT or SIGTERM, rather we are killed
+		// without a chance to clean up our subprocesses. When run inside
+		// terminateprocess-buffer, it is instead terminateprocess-buffer that
+		// is killed, and we can detect that event by that our stdin gets
+		// closed.
+		// https://trac.torproject.org/projects/tor/ticket/9330
+		go func() {
+			io.Copy(ioutil.Discard, os.Stdin)
+			log.Printf("synthesizing SIGTERM because of stdin close")
+			sigChan <- syscall.SIGTERM
+		}()
+	}
 
 	sig := <-sigChan
 	log.Printf("sig %s", sig)

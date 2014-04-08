@@ -5,6 +5,8 @@
 
 package main
 
+var exitOnStdinEOF = false
+
 var firefoxPath = "Browser/firefox"
 var firefoxProfilePath = "Data/Browser/profile.meek-http-helper"
 var meekClientPath = "Tor/PluggableTransports/meek-client"
