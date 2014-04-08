@@ -8,6 +8,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -19,13 +20,17 @@ func main() {
 		log.Fatalf("%s needs a command to run", os.Args[0])
 	}
 	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Start()
+	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		log.Fatal(err)
 	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	io.Copy(stdin, os.Stdin)
 	err = cmd.Wait()
 	if err != nil {
 		log.Fatal(err)
