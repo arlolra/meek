@@ -157,7 +157,7 @@ func main() {
 	go func() {
 		io.Copy(ioutil.Discard, os.Stdin)
 		log.Printf("synthesizing SIGTERM because of stdin close")
-		sigChan <-syscall.SIGTERM
+		sigChan <- syscall.SIGTERM
 	}()
 
 	sig := <-sigChan
