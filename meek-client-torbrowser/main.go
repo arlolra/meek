@@ -151,7 +151,7 @@ func main() {
 	// On Windows, we don't get a SIGINT or SIGTERM, rather we are killed
 	// without a chance to clean up our subprocesses. When run inside
 	// processterminate-buffer, it is instead processterminate-buffer that
-	// is killed, and we can detect that event by that our stdout gets
+	// is killed, and we can detect that event by that our stdin gets
 	// closed.
 	// https://trac.torproject.org/projects/tor/ticket/9330
 	go func() {
