@@ -1,0 +1,5 @@
+# https://developer.mozilla.org/en-US/docs/How_to_Build_an_XPCOM_Component_in_Javascript
+# https://developer.mozilla.org/en-US/docs/Mozilla/XPCOM/Receiving_startup_notifications
+component {e7bc2b9c-f454-49f3-a19f-14848a4d871d} components/main.js
+contract @bamsoftware.com/meek-http-helper;1 {e7bc2b9c-f454-49f3-a19f-14848a4d871d}
+category profile-after-change MeekHTTPHelper @bamsoftware.com/meek-http-helper;1
