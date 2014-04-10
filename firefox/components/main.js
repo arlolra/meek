@@ -184,6 +184,7 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
             output.write32(data.length);
             MeekHTTPHelper.refreshDeadline(this.transport, deadline);
             output.writeByteArray(data, data.length);
+            MeekHTTPHelper.refreshDeadline(this.transport, null);
         } finally {
             output.close();
         }
@@ -301,6 +302,7 @@ MeekHTTPHelper.RequestReader.prototype = {
         converter.charset = "UTF-8";
         var s = converter.convertFromByteArray(this.buf, this.buf.length);
         var req = JSON.parse(s);
+        MeekHTTPHelper.refreshDeadline(this.transport, null);
         this.callback(req);
     },
 };
