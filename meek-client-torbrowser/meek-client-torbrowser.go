@@ -1,3 +1,6 @@
+// Usage:
+//   meek-client-torbrowser -- --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
+//
 // The meek-client-torbrowser program starts a copy of Tor Browser running
 // meek-http-helper in a special profile, and then starts meek-client set up to
 // use the browser helper.
@@ -8,6 +11,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"io"
 	"io/ioutil"
 	"log"
@@ -91,8 +95,7 @@ func grepHelperAddr(r io.Reader) (string, error) {
 }
 
 // Run meek-client and return its exec.Cmd.
-func runMeekClient(helperAddr string) (cmd *exec.Cmd, err error) {
-	args := os.Args[1:]
+func runMeekClient(helperAddr string, args []string) (cmd *exec.Cmd, err error) {
 	args = append(args, []string{"--helper", helperAddr}...)
 	cmd = exec.Command(meekClientPath, args...)
 	cmd.Stdout = os.Stdout
@@ -108,6 +111,8 @@ func runMeekClient(helperAddr string) (cmd *exec.Cmd, err error) {
 
 func main() {
 	var err error
+
+	flag.Parse()
 
 	f, err := os.OpenFile("meek-client-torbrowser.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
@@ -141,7 +146,7 @@ func main() {
 	}
 
 	// Start meek-client with the helper address.
-	meekClientCmd, err := runMeekClient(helperAddr)
+	meekClientCmd, err := runMeekClient(helperAddr, flag.Args())
 	if err != nil {
 		log.Print(err)
 		return
