@@ -1,5 +1,5 @@
 // Usage:
-//   meek-client-torbrowser -- meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
+//   meek-client-torbrowser --log meek-client-torbrowser.log -- meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
 //
 // The meek-client-torbrowser program starts a copy of Tor Browser running
 // meek-http-helper in a special profile, and then starts meek-client set up to
@@ -112,16 +112,20 @@ func runMeekClient(helperAddr string, meekClientCommandLine []string) (cmd *exec
 }
 
 func main() {
+	var logFilename string
 	var err error
 
+	flag.StringVar(&logFilename, "log", "", "name of log file")
 	flag.Parse()
 
-	f, err := os.OpenFile("meek-client-torbrowser.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
-	if err != nil {
-		log.Fatal(err)
+	if logFilename != "" {
+		f, err := os.OpenFile("meek-client-torbrowser.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		log.SetOutput(f)
 	}
-	defer f.Close()
-	log.SetOutput(f)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
