@@ -68,9 +68,10 @@ MeekHTTPHelper.prototype = {
             dump("meek-http-helper: listen 127.0.0.1:" + serverSocket.port + "\n");
 
             // Block forever.
-            var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
-                .getService(Components.interfaces.nsIPromptService);
-            prompts.confirm(null, "Query", "Get down, get funky?");
+            // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/Threads#Waiting_for_a_background_task_to_complete
+            var thread = Components.classes["@mozilla.org/thread-manager;1"].getService().currentThread;
+            while (true)
+                thread.processNextEvent(true);
         } finally {
             var app = Components.classes["@mozilla.org/toolkit/app-startup;1"]
                 .getService(Components.interfaces.nsIAppStartup);
