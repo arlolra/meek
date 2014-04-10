@@ -12,6 +12,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -24,6 +25,11 @@ import (
 )
 
 var helperAddrPattern *regexp.Regexp
+
+func usage() {
+	fmt.Fprintf(os.Stderr, "Usage: %s [meek-client-torbrowser args] -- meek-client [meek-client args]\n", os.Args[0])
+	flag.PrintDefaults()
+}
 
 // Log a call to os.Process.Kill.
 func logKill(p *os.Process) error {
@@ -115,6 +121,7 @@ func main() {
 	var logFilename string
 	var err error
 
+	flag.Usage = usage
 	flag.StringVar(&logFilename, "log", "", "name of log file")
 	flag.Parse()
 
