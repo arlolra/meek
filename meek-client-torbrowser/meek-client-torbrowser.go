@@ -1,5 +1,5 @@
 // Usage:
-//   meek-client-torbrowser -- --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
+//   meek-client-torbrowser -- meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
 //
 // The meek-client-torbrowser program starts a copy of Tor Browser running
 // meek-http-helper in a special profile, and then starts meek-client set up to
@@ -95,7 +95,9 @@ func grepHelperAddr(r io.Reader) (string, error) {
 }
 
 // Run meek-client and return its exec.Cmd.
-func runMeekClient(helperAddr string, args []string) (cmd *exec.Cmd, err error) {
+func runMeekClient(helperAddr string, meekClientCommandLine []string) (cmd *exec.Cmd, err error) {
+	meekClientPath := meekClientCommandLine[0]
+	args := meekClientCommandLine[1:]
 	args = append(args, []string{"--helper", helperAddr}...)
 	cmd = exec.Command(meekClientPath, args...)
 	cmd.Stdout = os.Stdout

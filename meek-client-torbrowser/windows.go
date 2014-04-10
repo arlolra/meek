@@ -10,4 +10,3 @@ var exitOnStdinEOF = true
 
 var firefoxPath string = "Browser/firefox.exe"
 var firefoxProfilePath = "Data/Browser/profile.meek-http-helper"
-var meekClientPath = "Tor/PluggableTransports/meek-client.exe"
