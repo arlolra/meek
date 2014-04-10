@@ -118,10 +118,12 @@ func runMeekClient(helperAddr string, meekClientCommandLine []string) (cmd *exec
 }
 
 func main() {
+	var exitOnStdinEOF bool
 	var logFilename string
 	var err error
 
 	flag.Usage = usage
+	flag.BoolVar(&exitOnStdinEOF, "exit-on-stdin-eof", false, "exit when stdin is closed (use with terminateprocess-buffer)")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
 	flag.Parse()
 

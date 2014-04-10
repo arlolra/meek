@@ -5,7 +5,5 @@
 
 package main
 
-var exitOnStdinEOF = false
-
 var firefoxPath = "../Contents/MacOS/TorBrowser.app/Contents/MacOS/firefox"
 var firefoxProfilePath = "../Data/Browser/profile.meek-http-helper"
