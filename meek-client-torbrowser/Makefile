@@ -4,9 +4,9 @@ BINDIR = $(PREFIX)/bin
 
 GOBUILDFLAGS =
 
-all: meek-client
+all: meek-client-torbrowser
 
-meek-client: *.go
+meek-client-torbrowser: *.go
 	go build $(GOBUILDFLAGS)
 
 clean:
