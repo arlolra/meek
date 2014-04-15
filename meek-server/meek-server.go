@@ -23,6 +23,8 @@ const ptMethodName = "meek"
 const minSessionIdLength = 32
 const maxPayloadLength = 0x10000
 const turnaroundDeadline = 10 * time.Millisecond
+// Passed as ReadTimeout and WriteTimeout when constructing the http.Server.
+const readWriteTimeout = 10 * time.Second
 const maxSessionStaleness = 120 * time.Second
 
 var ptInfo pt.ServerInfo
@@ -231,6 +233,8 @@ func startServer(ln net.Listener) (net.Listener, error) {
 	go state.ExpireSessions()
 	server := &http.Server{
 		Handler: state,
+		ReadTimeout: readWriteTimeout,
+		WriteTimeout: readWriteTimeout,
 	}
 	go func() {
 		defer ln.Close()
