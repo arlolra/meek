@@ -22,6 +22,8 @@ import "git.torproject.org/pluggable-transports/goptlib.git"
 const ptMethodName = "meek"
 const minSessionIdLength = 32
 const maxPayloadLength = 0x10000
+// How long we try to read something back from the ORPort before returning the
+// response.
 const turnaroundTimeout = 10 * time.Millisecond
 // Passed as ReadTimeout and WriteTimeout when constructing the http.Server.
 const readWriteTimeout = 10 * time.Second
