@@ -187,6 +187,7 @@ func listenTLS(network string, addr *net.TCPAddr, certFilename, keyFilename stri
 	// We have to separate the Listen and Serve parts because we need to
 	// report the listening address before entering Serve (which is an
 	// infinite loop).
+	// https://groups.google.com/d/msg/Golang-nuts/3F1VRCCENp8/3hcayZiwYM8J
 	config := &tls.Config{}
 	config.NextProtos = []string{"http/1.1"}
 
