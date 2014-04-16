@@ -1,0 +1,15 @@
+meek helper extension for Chrome.
+
+To use, you must disable SPDY in Chrome by running it like this:
+	chrome --use-spdy=off
+Start Chrome, then enter the Tools→Extensions screen. Click the "Load
+unpacked extension" button and add the directory "app" in this
+directory. Click the button again and add the directory "extension".
+(You need to add both the app and the extension.)
+
+If the text under meek-browser-app reads "Inspect views: background page
+(Inactive)", click the link in order to make it active. The extension
+will be listening on localhost port 7000. Start tor with a torrc line
+like this:
+
+ClientTransportPlugin meek exec ./meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log --helper 127.0.0.1:7000
