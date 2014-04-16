@@ -1,0 +1,26 @@
+{
+  "manifest_version": 2,
+  "name": "meek-browser-app",
+  "minimum_chrome_version": "24",
+  "version": "0.1",
+
+  "permissions": [
+    "alarms"
+  ],
+
+  "sockets": {
+    "tcp": {
+      "connect": "*"
+    },
+    "tcpServer": {
+      "listen": "127.0.0.1:7000"
+    }
+  },
+
+  "app": {
+    "background": {
+      "scripts": ["background.js"],
+      "persistent": true
+    }
+  }
+}
