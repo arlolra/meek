@@ -1,7 +1,18 @@
 // attempt to keep app from going inactive
 
-chrome.alarms.create("ping", {when: 5000, periodInMinutes: 1 });
-chrome.alarms.onAlarm.addListener(function(alarm) { console.info("alarm name = " + alarm.name); });
+chrome.alarms.create("heartbeat", {when: 5000, periodInMinutes: 1 });
+chrome.alarms.onAlarm.addListener(function(alarm) { 
+  chrome.management.getAll(function(extensions) {
+    var app_id;
+    for (var i = 0; i < extensions.length; i++) {
+      if (extensions[i].name === "meek-browser-app") {
+        app_id = extensions[i].id;
+        break;
+      }
+    }
+    chrome.runtime.sendMessage(app_id, chrome.runtime.id);
+  });
+});
 
 var host = 'meek-reflect.appspot.com';
 

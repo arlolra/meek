@@ -5,7 +5,6 @@ chrome.alarms.onAlarm.addListener(function(alarm) { console.info("alarm name = "
 
 const IP = "127.0.0.1";
 const PORT = 7000;
-const EXTENSION_ID = "epmfkpbifhkdhcedgfppmeeoonjenkee"; //FIXME: Hardcoded extension ID
 
 const STATE_READING_LENGTH = 1;
 const STATE_READING_OBJECT = 2;
@@ -15,9 +14,16 @@ var state = STATE_READING_LENGTH;
 var buf = new Uint8Array(4);
 var bytesToRead = buf.length;
 
-chrome.sockets.tcpServer.create({}, function(createInfo) {
-  listenAndAccept(createInfo.socketId);
-});
+chrome.runtime.onMessageExternal.addListener(
+  function onHeartbeat(id, sender, sendResponse) {
+    console.assert(id === sender.id, "Sender's ID is incorrect.");
+    EXTENSION_ID = id;
+    chrome.runtime.onMessageExternal.removeListener(onHeartbeat);
+    chrome.sockets.tcpServer.create({}, function(createInfo) {
+      listenAndAccept(createInfo.socketId);
+    });
+  }
+);
 
 function listenAndAccept(socketId) {
   console.log("listenAndAccept " + socketId);
