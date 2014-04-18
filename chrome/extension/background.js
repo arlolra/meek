@@ -1,4 +1,8 @@
-// attempt to keep app from going inactive
+const DEBUG = false;
+
+function debug(str) {
+  if (DEBUG) { console.info(str); }
+}
 
 chrome.alarms.create("heartbeat", {when: 5000, periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener(function(alarm) { 
@@ -34,9 +38,9 @@ function onBeforeSendHeadersCallback(details) {
 }
 
 chrome.runtime.onConnectExternal.addListener(function(port) {
-  console.log("onConnectExternal");
+  debug("onConnectExternal");
   port.onMessage.addListener(function(request) {
-    console.log("onMessage");
+    debug("onMessage");
     var timeout = 2000;
     var xhr = new XMLHttpRequest();
     xhr.responseType = "arraybuffer";
@@ -50,14 +54,14 @@ chrome.runtime.onConnectExternal.addListener(function(port) {
       sendResponse(response);
     };
     xhr.onload = function() {
-      console.log("onload " + xhr.response.byteLength);
+      debug("onload " + xhr.response.byteLength);
       chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeadersCallback);
       var response = {
         status: xhr.status,
         body: _arrayBufferToBase64(xhr.response)
       };
       port.postMessage(response);
-      console.log("postMessage " + JSON.stringify(response));
+      debug("postMessage " + JSON.stringify(response));
     };
     var requestMethod = request.method;
     var url = request.url;
@@ -75,7 +79,7 @@ chrome.runtime.onConnectExternal.addListener(function(port) {
     if (request.body != undefined) {
       body = _base64ToArrayBuffer(request.body);
       xhr.overrideMimeType("Content-Type", "application/octet-stream");
-      console.log(body);
+      debug(body);
     }
 
     chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeadersCallback, {
@@ -99,7 +103,7 @@ function _base64ToArrayBuffer(base64) {
 
 function _arrayBufferToBase64(buf) {
   var bytes = new Uint8Array(buf);
-  console.log(JSON.stringify(buf));
+  debug(JSON.stringify(buf));
   var base64    = '';
   var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
   var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
