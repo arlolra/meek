@@ -1,7 +1,11 @@
 const DEBUG = false;
 
 function debug(str) {
-  if (DEBUG) { console.info(str); }
+  if (DEBUG) { console.debug(str); }
+}
+
+function info(str) {
+  console.info(str);
 }
 
 const IP = "127.0.0.1";
@@ -27,7 +31,7 @@ chrome.runtime.onMessageExternal.addListener(
 );
 
 function listenAndAccept(socketId) {
-  debug("listenAndAccept " + socketId);
+  info("listenAndAccept " + socketId);
   chrome.sockets.tcpServer.listen(socketId,
     IP, PORT, function(resultCode) {
       onListenCallback(socketId, resultCode)
@@ -48,6 +52,7 @@ function onListenCallback(socketId, resultCode) {
   });
   chrome.sockets.tcp.onReceive.addListener(onReceive);
   chrome.sockets.tcp.onReceiveError.addListener(function(info) {
+    chrome.sockets.tcp.close(info.socketId);
     debug("onReceiveError " + JSON.stringify(info));
   });
 }
