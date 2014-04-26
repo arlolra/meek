@@ -129,7 +129,7 @@ MeekHTTPHelper.LocalConnectionHandler = function(transport) {
 };
 MeekHTTPHelper.LocalConnectionHandler.prototype = {
     readRequest: function(callback) {
-        this.requestreader = new MeekHTTPHelper.RequestReader(this.transport, this.makeRequest.bind(this));
+        this.requestreader = new MeekHTTPHelper.RequestReader(this.transport, callback);
     },
 
     makeRequest: function(req) {
