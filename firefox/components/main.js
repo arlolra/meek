@@ -122,14 +122,14 @@ MeekHTTPHelper.lookupStatus = function(status) {
 // happens within callbacks.
 MeekHTTPHelper.LocalConnectionHandler = function(transport) {
     this.transport = transport;
-    this.requestreader = null;
+    this.requestReader = null;
     this.channel = null;
     this.listener = null;
     this.readRequest(this.makeRequest.bind(this));
 };
 MeekHTTPHelper.LocalConnectionHandler.prototype = {
     readRequest: function(callback) {
-        this.requestreader = new MeekHTTPHelper.RequestReader(this.transport, callback);
+        this.requestReader = new MeekHTTPHelper.RequestReader(this.transport, callback);
     },
 
     makeRequest: function(req) {
