@@ -19,8 +19,10 @@ var urls = [...]string{
 	"https://www.googleusercontent.com/",
 }
 
-const urlFetchTimeout = 10 * time.Second
-const numTrials = 5
+const (
+	urlFetchTimeout = 10 * time.Second
+	numTrials = 5
+)
 
 var context appengine.Context
 

@@ -20,15 +20,17 @@ import (
 
 import "git.torproject.org/pluggable-transports/goptlib.git"
 
-const ptMethodName = "meek"
-const sessionIdLength = 32
-const maxPayloadLength = 0x10000
-const initPollInterval = 100 * time.Millisecond
-const maxPollInterval = 5 * time.Second
-const pollIntervalMultiplier = 1.5
-const maxHelperResponseLength = 10000000
-const helperReadTimeout = 60 * time.Second
-const helperWriteTimeout = 2 * time.Second
+const (
+	ptMethodName = "meek"
+	sessionIdLength = 32
+	maxPayloadLength = 0x10000
+	initPollInterval = 100 * time.Millisecond
+	maxPollInterval = 5 * time.Second
+	pollIntervalMultiplier = 1.5
+	maxHelperResponseLength = 10000000
+	helperReadTimeout = 60 * time.Second
+	helperWriteTimeout = 2 * time.Second
+)
 
 var ptInfo pt.ClientInfo
 

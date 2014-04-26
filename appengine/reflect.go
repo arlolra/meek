@@ -10,9 +10,12 @@ import (
 	"appengine/urlfetch"
 )
 
-const forwardURL = "http://meek.bamsoftware.com:7002/"
-// A timeout of 0 means to use the App Engine default (5 seconds).
-const urlFetchTimeout = 10 * time.Second
+const (
+	forwardURL = "http://meek.bamsoftware.com:7002/"
+	// A timeout of 0 means to use the App Engine default (5 seconds).
+	urlFetchTimeout = 10 * time.Second
+)
+
 var context appengine.Context
 
 func pathJoin(a, b string) string {

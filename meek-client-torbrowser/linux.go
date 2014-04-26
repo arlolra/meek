@@ -5,5 +5,7 @@
 
 package main
 
-var firefoxPath = "Browser/firefox"
-var firefoxProfilePath = "Data/Browser/profile.meek-http-helper"
+const (
+	firefoxPath = "Browser/firefox"
+	firefoxProfilePath = "Data/Browser/profile.meek-http-helper"
+)
