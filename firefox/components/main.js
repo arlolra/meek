@@ -1,10 +1,11 @@
 // This is an extension that allows external programs to make HTTP requests
 // using the browser's networking libraries.
 //
-// The extension opens a TCP socket listening on localhost (port 7000). When it
-// receives a connection, it reads a 4-byte big-endian length field, then tries
-// to read that many bytes of data. The data is UTF-8–encoded JSON, having the
-// format
+// The extension opens a TCP socket listening on localhost on an ephemeral port.
+// It writes the port number in a recognizable format to stdout so that a parent
+// process can read it and connect. When the extension receives a connection, it
+// reads a 4-byte big-endian length field, then tries to read that many bytes of
+// data. The data is UTF-8–encoded JSON, having the format
 //  {
 //      "method": "POST",
 //      "url": "https://www.google.com/",
