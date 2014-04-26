@@ -54,7 +54,7 @@ MeekHTTPHelper.prototype = {
     // nsIObserver implementation.
     observe: function(subject, topic, data) {
         if (topic !== "profile-after-change")
-            return
+            return;
 
         try {
             // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
