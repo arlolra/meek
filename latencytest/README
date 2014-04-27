@@ -1,0 +1,3 @@
+This is an App Engine web app that measures the latency between the App
+Engine servers and other endpoints. A copy of this app is running at
+http://meek-latency-test.appspot.com/.

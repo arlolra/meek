@@ -229,12 +229,15 @@ MeekHTTPHelper.RequestReader = function(transport, callback) {
         Components.interfaces.nsITransport.OPEN_BLOCKING | Components.interfaces.nsITransport.OPEN_UNBUFFERED, 0, 0);
 
     this.state = this.STATE_READING_LENGTH;
+    // Initially size the buffer to read the 4-byte length.
     this.buf = new Uint8Array(4);
     this.bytesToRead = this.buf.length;
     this.deadline = Date.now() + MeekHTTPHelper.LOCAL_READ_TIMEOUT * 1000;
     this.asyncWait();
 };
 MeekHTTPHelper.RequestReader.prototype = {
+    // The onInputStreamReady callback is called for all read events. These
+    // constants keep track of the state of parsing.
     STATE_READING_LENGTH: 1,
     STATE_READING_OBJECT: 2,
     STATE_DONE: 3,

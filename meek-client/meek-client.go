@@ -151,6 +151,7 @@ func handler(conn *pt.SocksConn) error {
 	}()
 
 	defer conn.Close()
+	// Ignore the IP address in the SOCKS request.
 	err := conn.Grant(&net.TCPAddr{IP: net.ParseIP("0.0.0.0"), Port: 0})
 	if err != nil {
 		return err

@@ -1,3 +1,6 @@
+// This program tests the HTTP round-trip time from App Engine to various
+// endpoints. It does several POSTS to each endpoint and then draws a graph
+// showing the round-trip time.
 package latencytest
 
 import (

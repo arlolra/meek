@@ -1,3 +1,5 @@
+// A web app for Google App Engine that proxies HTTP requests and responses to a
+// Tor relay running meek-server.
 package reflect
 
 import (
@@ -18,6 +20,7 @@ const (
 
 var context appengine.Context
 
+// Join two URL paths.
 func pathJoin(a, b string) string {
 	if len(a) > 0 && a[len(a)-1] == '/' {
 		a = a[:len(a)-1]
@@ -37,11 +40,15 @@ var reflectedHeaderFields = []string{
 	"X-Session-Id",
 }
 
+// Make a copy of r, with the URL being changed to be relative to forwardURL,
+// and including only the headers in reflectedHeaderFields.
 func copyRequest(r *http.Request) (*http.Request, error) {
 	u, err := url.Parse(forwardURL)
 	if err != nil {
 		return nil, err
 	}
+	// Append the requested path to the path in forwardURL, so that
+	// forwardURL can be something like "http://example.com/reflect".
 	u.Path = pathJoin(u.Path, r.URL.Path)
 	c, err := http.NewRequest(r.Method, u.String(), r.Body)
 	if err != nil {
@@ -64,6 +71,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Use urlfetch.Transport directly instead of urlfetch.Client because we
+	// want only a single HTTP transaction, not following redirects.
 	transport := urlfetch.Transport{
 		Context: context,
 		// Despite the name, Transport.Deadline is really a timeout and
