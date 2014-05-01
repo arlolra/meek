@@ -6,6 +6,6 @@
 package main
 
 const (
-	firefoxPath string = "Browser/firefox.exe"
-	firefoxProfilePath = "Data/Browser/profile.meek-http-helper"
+	firefoxPath        string = "Browser/firefox.exe"
+	firefoxProfilePath        = "Data/Browser/profile.meek-http-helper"
 )

@@ -24,7 +24,7 @@ var urls = [...]string{
 
 const (
 	urlFetchTimeout = 10 * time.Second
-	numTrials = 5
+	numTrials       = 5
 )
 
 var context appengine.Context

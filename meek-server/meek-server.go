@@ -20,14 +20,14 @@ import (
 import "git.torproject.org/pluggable-transports/goptlib.git"
 
 const (
-	ptMethodName = "meek"
+	ptMethodName       = "meek"
 	minSessionIdLength = 32
-	maxPayloadLength = 0x10000
+	maxPayloadLength   = 0x10000
 	// How long we try to read something back from the ORPort before returning the
 	// response.
 	turnaroundTimeout = 10 * time.Millisecond
 	// Passed as ReadTimeout and WriteTimeout when constructing the http.Server.
-	readWriteTimeout = 10 * time.Second
+	readWriteTimeout    = 10 * time.Second
 	maxSessionStaleness = 120 * time.Second
 )
 
@@ -236,8 +236,8 @@ func startServer(ln net.Listener) (net.Listener, error) {
 	state := NewState()
 	go state.ExpireSessions()
 	server := &http.Server{
-		Handler: state,
-		ReadTimeout: readWriteTimeout,
+		Handler:      state,
+		ReadTimeout:  readWriteTimeout,
 		WriteTimeout: readWriteTimeout,
 	}
 	go func() {

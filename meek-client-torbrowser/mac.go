@@ -6,6 +6,6 @@
 package main
 
 const (
-	firefoxPath = "../Contents/MacOS/TorBrowser.app/Contents/MacOS/firefox"
+	firefoxPath        = "../Contents/MacOS/TorBrowser.app/Contents/MacOS/firefox"
 	firefoxProfilePath = "../Data/Browser/profile.meek-http-helper"
 )
