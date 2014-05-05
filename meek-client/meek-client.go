@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
@@ -100,31 +101,68 @@ func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
 }
 
 func copyLoop(conn net.Conn, info *RequestInfo) error {
-	buf := make([]byte, maxPayloadLength)
 	var interval time.Duration
 
-	interval = initPollInterval
-	for {
-		conn.SetReadDeadline(time.Now().Add(interval))
-		// log.Printf("next poll %.6f s", interval.Seconds())
-		nr, readErr := conn.Read(buf)
-		// log.Printf("read from local: %q", buf[:nr])
+	ch := make(chan []byte)
 
-		nw, err := sendRecv(buf[:nr], conn, info)
+	// Read from the Conn and send byte slices on the channel.
+	go func() {
+		var buf [maxPayloadLength]byte
+		r := bufio.NewReader(conn)
+		for {
+			n, err := r.Read(buf[:])
+			b := make([]byte, n)
+			copy(b, buf[:n])
+			// log.Printf("read from local: %q", b)
+			ch <- b
+			if err != nil {
+				log.Printf("error reading from local: %s", err)
+				break
+			}
+		}
+		close(ch)
+	}()
+
+	interval = initPollInterval
+loop:
+	for {
+		var buf []byte
+		var ok bool
+
+		// log.Printf("waiting up to %.2f s", interval.Seconds())
+		// start := time.Now()
+		select {
+		case buf, ok = <-ch:
+			if !ok {
+				break loop
+			}
+			// log.Printf("read %d bytes from local after %.2f s", len(buf), time.Since(start).Seconds())
+		case <-time.After(interval):
+			// log.Printf("read nothing from local after %.2f s", time.Since(start).Seconds())
+			buf = nil
+		}
+
+		nw, err := sendRecv(buf, conn, info)
 		if err != nil {
 			return err
 		}
-		// log.Printf("read from remote: %d", nw)
-
-		if readErr != nil {
-			if e, ok := readErr.(net.Error); !ok || !e.Timeout() {
-				return readErr
+		/*
+			if nw > 0 {
+				log.Printf("got %d bytes from remote", nw)
+			} else {
+				log.Printf("got nothing from remote")
 			}
-		}
+		*/
 
 		if nw > 0 {
+			// If we received anything, poll again immediately.
+			interval = 0
+		} else if interval == 0 {
+			// The first time we don't receive anything, wait a
+			// while.
 			interval = initPollInterval
 		} else {
+			// After that, wait a little longer.
 			interval = time.Duration(float64(interval) * pollIntervalMultiplier)
 		}
 		if interval > maxPollInterval {
