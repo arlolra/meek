@@ -154,12 +154,13 @@ loop:
 			}
 		*/
 
-		if nw > 0 {
-			// If we received anything, poll again immediately.
+		if nw > 0 || len(buf) > 0 {
+			// If we sent or received anything, poll again
+			// immediately.
 			interval = 0
 		} else if interval == 0 {
-			// The first time we don't receive anything, wait a
-			// while.
+			// The first time we don't send or receive anything,
+			// wait a while.
 			interval = initPollInterval
 		} else {
 			// After that, wait a little longer.
