@@ -27,7 +27,7 @@ const (
 	// response.
 	turnaroundTimeout = 10 * time.Millisecond
 	// Passed as ReadTimeout and WriteTimeout when constructing the http.Server.
-	readWriteTimeout    = 10 * time.Second
+	readWriteTimeout    = 20 * time.Second
 	maxSessionStaleness = 120 * time.Second
 )
 
