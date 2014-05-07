@@ -15,7 +15,7 @@ import (
 const (
 	forwardURL = "http://meek.bamsoftware.com:7002/"
 	// A timeout of 0 means to use the App Engine default (5 seconds).
-	urlFetchTimeout = 10 * time.Second
+	urlFetchTimeout = 20 * time.Second
 )
 
 var context appengine.Context
