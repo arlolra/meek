@@ -6,6 +6,9 @@
 // 	ServerTransportPlugin meek exec ./meek-server --port 8443 --cert cert.pem --key key.pem --log meek-server.log
 // Plain HTTP usage:
 // 	ServerTransportPlugin meek exec ./meek-server --port 8080 --disable-tls --log meek-server.log
+//
+// The server runs in HTTPS mode by default, and the --cert and --key options
+// are required. Use the --disable-tls option to run with plain HTTP.
 package main
 
 import (
