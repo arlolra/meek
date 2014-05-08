@@ -17,7 +17,7 @@
 // using SOCKS args:
 // 	Bridge meek 0.0.2.0:1 url=https://meek-reflect.appspot.com/ front=www.google.com
 // 	ClientTransportPlugin meek exec ./meek-client
-// is the same as this one using command line options.
+// is the same as this one using command line options:
 // 	Bridge meek 0.0.2.0:1
 // 	ClientTransportPlugin meek exec ./meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com
 // The advantage of SOCKS args is that multiple Bridge lines can have different
