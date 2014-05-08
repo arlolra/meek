@@ -1,0 +1,111 @@
+'\" t
+.\"     Title: meek-client
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 05/07/2014
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "MEEK\-CLIEN" "1" "05/07/2014" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+meek-client \- The meek client transport plugin
+.SH "SYNOPSIS"
+.sp
+\fBmeek\-client\fR \fB\-\-url\fR=\fIURL\fR \fB\-\-front\fR=\fIDOMAIN\fR [\fIOPTIONS\fR]
+.SH "DESCRIPTION"
+.sp
+meek\-client is a transport plugin for Tor that encodes a stream as a sequence of HTTP requests and responses\&. It is usually run with the \fB\-\-url\fR and \fB\-\-front\fR options\&. The \fB\-\-url\fR option controls what URL requests are made to; the web server at that URL should be configured to forward requests to a meek\-server somewhere\&. The \fB\-\-front\fR option is for domain name camouflage: The domain name in the URL is replaced by the front domain before the request is made, but the Host header inside the HTTP request still points to the original domain\&. The idea is to front through a domain that is not blocked to a domain that is blocked\&.
+.sp
+Configuration for meek\-client usually appears in a torrc file\&. Most user configuration can happen either through SOCKS args (i\&.e\&., args on a Bridge line) or through command line options\&. SOCKS args take precedence per\-connection over command line options\&. For example, this configuration using SOCKS args:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Bridge meek 0\&.0\&.2\&.0:1 url=https://meek\-reflect\&.appspot\&.com/ front=www\&.google\&.com
+ClientTransportPlugin meek exec \&./meek\-client
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+is the same as this one using command line options:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Bridge meek 0\&.0\&.2\&.0:1
+ClientTransportPlugin meek exec \&./meek\-client \-\-url=https://meek\-reflect\&.appspot\&.com/ \-\-front=www\&.google\&.com
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The advantage of SOCKS args is that multiple Bridge lines can have different configurations\&.
+.sp
+The \fB\-\-helper\fR option prevents meek\-client from doing any network operations itself\&. Rather, it will send all requests through a browser extension, which must be set up separately\&.
+.SH "OPTIONS"
+.PP
+\fB\-\-front\fR=\fIDOMAIN\fR
+.RS 4
+Front domain name\&. The
+\fBfront\fR
+SOCKS arg overrides the command line\&.
+.RE
+.PP
+\fB\-\-helper\fR=\fIADDRESS\fR
+.RS 4
+Address of HTTP helper browser extension\&. For example,
+\fB\-\-helper 127\&.0\&.0\&.1:7000\fR\&.
+.RE
+.PP
+\fB\-\-http\-proxy\fR=\fIURL\fR
+.RS 4
+URL of HTTP proxy\&. If not given, the proxy URL may be taken from the The
+\fBhttp\-proxy\fR
+SOCKS arg overrides the command line\&. For example,
+\fB\-\-http\-proxy=http://localhost:8787/\fR\&.
+.RE
+.PP
+\fB\-\-log\fR=\fIFILENAME\fR
+.RS 4
+Name of a file to write log messages to (default stderr)\&.
+.RE
+.PP
+\fB\-\-url\fR=\fIURL\fR
+.RS 4
+URL to correspond with\&. The domain part of the URL may be modified by
+\fB\-\-front\fR\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Display a help message and exit\&.
+.RE
+.SH "SEE ALSO"
+.sp
+\fBhttps://trac\&.torproject\&.org/projects/tor/wiki/doc/meek\fR
+.SH "BUGS"
+.sp
+Please report at \fBhttps://trac\&.torproject\&.org/projects/tor\fR\&.
