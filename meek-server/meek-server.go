@@ -332,7 +332,9 @@ func main() {
 		ln.Close()
 	}
 
+	log.Printf("got signal %s", sig)
 	if sig == syscall.SIGTERM {
+		log.Printf("done")
 		return
 	}
 
@@ -346,5 +348,6 @@ func main() {
 		}
 	}
 
+	log.Printf("got second signal %s", sig)
 	log.Printf("done")
 }
