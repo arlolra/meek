@@ -29,7 +29,8 @@ type JSONResponse struct {
 	Body   []byte `json:"body"`
 }
 
-// Ask a locally running browser extension to make the request for us.
+// Do an HTTP roundtrip through the configured browser extension, using the
+// payload data in buf and the request metadata in info.
 func roundTripWithHelper(buf []byte, info *RequestInfo) (*http.Response, error) {
 	s, err := net.DialTCP("tcp", nil, options.HelperAddr)
 	if err != nil {

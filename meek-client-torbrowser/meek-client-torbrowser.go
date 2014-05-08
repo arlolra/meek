@@ -1,12 +1,31 @@
-// Usage:
-//   meek-client-torbrowser --log meek-client-torbrowser.log -- meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
+// meek-client-torbrowser is an auxiliary program that helps with connecting
+// meek-client to meek-http-helper running in Tor Browser.
 //
-// The meek-client-torbrowser program starts a copy of Tor Browser running
-// meek-http-helper in a special profile, and then starts meek-client set up to
-// use the browser helper.
+// Sample usage in torrc (exact paths depend on platform):
+// 	ClientTransportPlugin meek exec ./meek-client-torbrowser --log meek-client-torbrowser.log -- ./meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
+// Everything up to "--" is options for this program. Everything following it is
+// a meek-client command line. The command line for running firefox is implicit
+// and hardcoded in this program.
 //
-// Arguments to this program are passed unmodified to meek-client, with the
-// addition of a --helper option pointing to the browser helper.
+// This program, meek-client-torbrowser, starts a copy of firefox under the
+// meek-http-helper profile, which must have configured the meek-http-helper
+// extension. This program reads the stdout of firefox, looking for a special
+// line with the listening port number of the extension, one that looks like
+// "meek-http-helper: listen <address>". The meek-client command is then
+// executed as given, except that a --helper option is added that points to the
+// port number read from firefox.
+//
+// This program proxies stdin and stdout to and from meek-client, so it is
+// actually meek-client that drives the pluggable transport negotiation with
+// tor.
+//
+// The special --exit-on-stdin-eof is a special workaround for Windows. On
+// Windows we don't get a detectable shutdown signal that allows us to kill the
+// subprocesses we've started. Instead, use the --exit-on-stdin-eof option and
+// run this program inside of terminateprocess-buffer. When
+// terminateprocess-buffer is killed, it will close our stdin, and we can exit
+// gracefully. --exit-on-stdin-eof and terminateprocess-buffer need to be used
+// together.
 package main
 
 import (

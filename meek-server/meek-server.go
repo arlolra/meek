@@ -1,3 +1,11 @@
+// meek-server is the server transport plugin for the meek pluggable transport.
+// It acts as an HTTP server, keeps track of session ids, and forwards received
+// data to a local OR port.
+//
+// Sample usage in torrc:
+// 	ServerTransportPlugin meek exec ./meek-server --port 8443 --cert cert.pem --key key.pem --log meek-server.log
+// Plain HTTP usage:
+// 	ServerTransportPlugin meek exec ./meek-server --port 8080 --disable-tls --log meek-server.log
 package main
 
 import (
@@ -20,14 +28,22 @@ import (
 import "git.torproject.org/pluggable-transports/goptlib.git"
 
 const (
-	ptMethodName       = "meek"
+	ptMethodName = "meek"
+	// Reject session ids shorter than this, as a weak defense against
+	// client bugs that send an empty session id or something similarly
+	// likely to collide.
 	minSessionIdLength = 32
-	maxPayloadLength   = 0x10000
-	// How long we try to read something back from the ORPort before returning the
-	// response.
+	// The largest request body we are willing to process, and the largest
+	// chunk of data we'll send back in a response.
+	maxPayloadLength = 0x10000
+	// How long we try to read something back from the OR port before
+	// returning the response.
 	turnaroundTimeout = 10 * time.Millisecond
-	// Passed as ReadTimeout and WriteTimeout when constructing the http.Server.
-	readWriteTimeout    = 20 * time.Second
+	// Passed as ReadTimeout and WriteTimeout when constructing the
+	// http.Server.
+	readWriteTimeout = 20 * time.Second
+	// Cull unused session ids (with their corresponding OR port connection)
+	// if we haven't seen any activity for this long.
 	maxSessionStaleness = 120 * time.Second
 )
 
@@ -45,19 +61,27 @@ func httpInternalServerError(w http.ResponseWriter) {
 	http.Error(w, "Internal server error.\n", http.StatusInternalServerError)
 }
 
+// Every session id maps to an existing OR port connection, which we keep open
+// between received requests. The first time we see a new session id, we create
+// a new OR port connection.
 type Session struct {
 	Or       *net.TCPConn
 	LastSeen time.Time
 }
 
+// Mark a session as having been seen just now.
 func (session *Session) Touch() {
 	session.LastSeen = time.Now()
 }
 
+// Is this session old enough to be culled?
 func (session *Session) IsExpired() bool {
 	return time.Since(session.LastSeen) > maxSessionStaleness
 }
 
+// There is one state per HTTP listener. In the usual case there is just one
+// listener, so there is just one global state. State also serves as the http
+// Handler.
 type State struct {
 	sessionMap map[string]*Session
 	lock       sync.Mutex
@@ -85,6 +109,7 @@ func (state *State) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// Handle a GET request. This doesn't have any purpose apart from diagnostics.
 func (state *State) Get(w http.ResponseWriter, req *http.Request) {
 	if path.Clean(req.URL.Path) != "/" {
 		http.NotFound(w, req)
@@ -95,6 +120,8 @@ func (state *State) Get(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("I’m just a happy little web server.\n"))
 }
 
+// Look up a session by id, or create a new one (with its OR port connection) if
+// it doesn't already exist.
 func (state *State) GetSession(sessionId string, req *http.Request) (*Session, error) {
 	state.lock.Lock()
 	defer state.lock.Unlock()
@@ -115,6 +142,8 @@ func (state *State) GetSession(sessionId string, req *http.Request) (*Session, e
 	return session, nil
 }
 
+// Feed the body of req into the OR port, and write any data read from the OR
+// port back to w.
 func transact(session *Session, w http.ResponseWriter, req *http.Request) error {
 	body := http.MaxBytesReader(w, req.Body, maxPayloadLength+1)
 	_, err := io.Copy(session.Or, body)
@@ -140,6 +169,7 @@ func transact(session *Session, w http.ResponseWriter, req *http.Request) error 
 	return nil
 }
 
+// Handle a POST request. Look up the session id and then do a transaction.
 func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 	sessionId := req.Header.Get("X-Session-Id")
 	if len(sessionId) < minSessionIdLength {
@@ -162,6 +192,8 @@ func (state *State) Post(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// Remove a session from the map and closes its corresponding OR port
+// connection. Does nothing if the session id is not known.
 func (state *State) CloseSession(sessionId string) {
 	state.lock.Lock()
 	defer state.lock.Unlock()
@@ -173,6 +205,7 @@ func (state *State) CloseSession(sessionId string) {
 	}
 }
 
+// Loop forever, checking for expired sessions and removing them.
 func (state *State) ExpireSessions() {
 	for {
 		time.Sleep(maxSessionStaleness / 2)
@@ -319,7 +352,7 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// wait for first signal
+	// Wait for first signal.
 	sig = nil
 	for sig == nil {
 		select {
@@ -338,7 +371,7 @@ func main() {
 		return
 	}
 
-	// wait for second signal or no more handlers
+	// Wait for second signal or no more handlers.
 	sig = nil
 	for sig == nil && numHandlers != 0 {
 		select {

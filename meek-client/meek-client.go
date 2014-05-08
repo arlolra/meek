@@ -1,3 +1,31 @@
+// meek-client is the client transport plugin for the meek pluggable transport.
+//
+// Sample usage in torrc:
+// 	Bridge meek 0.0.2.0:1
+// 	ClientTransportPlugin meek exec ./meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
+// The transport ignores the bridge address 0.0.2.0:1 and instead connects to
+// the URL given by --url. When --front is given, the domain in the URL is
+// replaced by the front domain for the purpose of the DNS lookup, TCP
+// connection, and TLS SNI, but the HTTP Host header in the request will be the
+// one in --url. (For example, in the configuration above, the connection will
+// appear on the outside to be going to www.google.com, but it will actually be
+// dispatched to meek-reflect.appspot.com by the Google frontend server.)
+//
+// Most user configuration can happen either through SOCKS args (i.e., args on a
+// Bridge line) or through command line options. SOCKS args take precedence
+// per-connection over command line options. For example, this configuration
+// using SOCKS args:
+// 	Bridge meek 0.0.2.0:1 url=https://meek-reflect.appspot.com/ front=www.google.com
+// 	ClientTransportPlugin meek exec ./meek-client
+// is the same as this one using command line options.
+// 	Bridge meek 0.0.2.0:1
+// 	ClientTransportPlugin meek exec ./meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com
+// The advantage of SOCKS args is that multiple Bridge lines can have different
+// configurations, but it requires a newer tor.
+//
+// The --helper option prevents this program from doing any network operations
+// itself. Rather, it will send all requests through a browser extension that
+// makes HTTP requests.
 package main
 
 import (
@@ -22,12 +50,27 @@ import (
 import "git.torproject.org/pluggable-transports/goptlib.git"
 
 const (
-	ptMethodName            = "meek"
-	sessionIdLength         = 32
-	maxPayloadLength        = 0x10000
-	initPollInterval        = 100 * time.Millisecond
-	maxPollInterval         = 5 * time.Second
-	pollIntervalMultiplier  = 1.5
+	ptMethodName = "meek"
+	// A session ID is a randomly generated string that identifies a
+	// long-lived session. We split a TCP stream across multiple HTTP
+	// requests, and those with the same session ID belong to the same
+	// stream.
+	sessionIdLength = 32
+	// The size of the largest chunk of data we will read from the SOCKS
+	// port before forwarding it in a request, and the maximum size of a
+	// body we are willing to handle in a reply.
+	maxPayloadLength = 0x10000
+	// We must poll the server to see if it has anything to send; there is
+	// no way for the server to push data back to us until we send an HTTP
+	// request. When a timer expires, we send a request even if it has an
+	// empty body. The interval starts at this value and then grows.
+	initPollInterval = 100 * time.Millisecond
+	// Maximum polling interval.
+	maxPollInterval = 5 * time.Second
+	// Geometric increase in the polling interval each time we fail to read
+	// data.
+	pollIntervalMultiplier = 1.5
+	// Safety limits on interaction with the HTTP helper.
 	maxHelperResponseLength = 10000000
 	helperReadTimeout       = 60 * time.Second
 	helperWriteTimeout      = 2 * time.Second
@@ -35,6 +78,7 @@ const (
 
 var ptInfo pt.ClientInfo
 
+// Store for command line options.
 var options struct {
 	URL          string
 	Front        string
@@ -63,6 +107,8 @@ type RequestInfo struct {
 	HTTPProxyURL *url.URL
 }
 
+// Do an HTTP roundtrip using the payload data in buf and the request metadata
+// in info.
 func roundTripWithHTTP(buf []byte, info *RequestInfo) (*http.Response, error) {
 	tr := http.DefaultTransport
 	if info.HTTPProxyURL != nil {
@@ -82,6 +128,8 @@ func roundTripWithHTTP(buf []byte, info *RequestInfo) (*http.Response, error) {
 	return tr.RoundTrip(req)
 }
 
+// Send the data in buf to the remote URL, wait for a reply, and feed the reply
+// body back into conn.
 func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
 	roundTrip := roundTripWithHTTP
 	if options.HelperAddr != nil {
@@ -100,6 +148,8 @@ func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
 	return io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
 }
 
+// Repeatedly read from conn, issue HTTP requests, and write the responses back
+// to conn.
 func copyLoop(conn net.Conn, info *RequestInfo) error {
 	var interval time.Duration
 
@@ -183,6 +233,7 @@ func genSessionId() string {
 	return base64.StdEncoding.EncodeToString(buf)
 }
 
+// Callback for new SOCKS requests.
 func handler(conn *pt.SocksConn) error {
 	handlerChan <- 1
 	defer func() {
@@ -190,7 +241,6 @@ func handler(conn *pt.SocksConn) error {
 	}()
 
 	defer conn.Close()
-	// Ignore the IP address in the SOCKS request.
 	err := conn.Grant(&net.TCPAddr{IP: net.ParseIP("0.0.0.0"), Port: 0})
 	if err != nil {
 		return err
@@ -333,7 +383,7 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// wait for first signal
+	// Wait for first signal.
 	sig = nil
 	for sig == nil {
 		select {
@@ -352,7 +402,7 @@ func main() {
 		return
 	}
 
-	// wait for second signal or no more handlers
+	// Wait for second signal or no more handlers.
 	sig = nil
 	for sig == nil && numHandlers != 0 {
 		select {
