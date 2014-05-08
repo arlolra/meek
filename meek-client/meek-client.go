@@ -321,7 +321,7 @@ func main() {
 
 	flag.StringVar(&options.Front, "front", "", "front domain name if no front= SOCKS arg")
 	flag.StringVar(&helperAddr, "helper", "", "address of HTTP helper (browser extension)")
-	flag.StringVar(&httpProxy, "http-proxy", "", "HTTP proxy URL (default from HTTP_PROXY environment variable)")
+	flag.StringVar(&httpProxy, "http-proxy", "", "HTTP proxy URL (default from http-proxy= SOCKS arg or HTTP_PROXY environment variable)")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
 	flag.StringVar(&options.URL, "url", "", "URL to request if no url= SOCKS arg")
 	flag.Parse()
