@@ -54,7 +54,7 @@ func (session *Session) Touch() {
 	session.LastSeen = time.Now()
 }
 
-func (session *Session) Expired() bool {
+func (session *Session) IsExpired() bool {
 	return time.Since(session.LastSeen) > maxSessionStaleness
 }
 
@@ -178,7 +178,7 @@ func (state *State) ExpireSessions() {
 		time.Sleep(maxSessionStaleness / 2)
 		state.lock.Lock()
 		for sessionId, session := range state.sessionMap {
-			if session.Expired() {
+			if session.IsExpired() {
 				// log.Printf("deleting expired session %q", sessionId)
 				session.Or.Close()
 				delete(state.sessionMap, sessionId)
