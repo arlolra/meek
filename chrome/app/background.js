@@ -1,7 +1,12 @@
-// attempt to keep app from going inactive
+const DEBUG = false;
 
-chrome.alarms.create("ping", {when: 5000, periodInMinutes: 1 });
-chrome.alarms.onAlarm.addListener(function(alarm) { console.info("alarm name = " + alarm.name); });
+function debug(str) {
+  if (DEBUG) { console.debug(str); }
+}
+
+function info(str) {
+  console.info(str);
+}
 
 const IP = "127.0.0.1";
 const PORT = 7000;
@@ -26,7 +31,7 @@ chrome.runtime.onMessageExternal.addListener(
 );
 
 function listenAndAccept(socketId) {
-  console.log("listenAndAccept " + socketId);
+  info("listenAndAccept " + socketId);
   chrome.sockets.tcpServer.listen(socketId,
     IP, PORT, function(resultCode) {
       onListenCallback(socketId, resultCode)
@@ -34,25 +39,26 @@ function listenAndAccept(socketId) {
 }
 
 function onListenCallback(socketId, resultCode) {
-  console.log("onListenCallback " + socketId);
+  debug("onListenCallback " + socketId);
   if (resultCode < 0) {
-    console.log("Error listening:" +
+    debug("Error listening:" +
       chrome.runtime.lastError.message);
     return;
   }
   serverSocketId = socketId;
   chrome.sockets.tcpServer.onAccept.addListener(onAccept);
   chrome.sockets.tcpServer.onAcceptError.addListener(function(info) {
-    console.log("onAcceptError " + JSON.stringify(info));
+    debug("onAcceptError " + JSON.stringify(info));
   });
   chrome.sockets.tcp.onReceive.addListener(onReceive);
   chrome.sockets.tcp.onReceiveError.addListener(function(info) {
-    console.log("onReceiveError " + JSON.stringify(info));
+    chrome.sockets.tcp.close(info.socketId);
+    debug("onReceiveError " + JSON.stringify(info));
   });
 }
 
 function onAccept(info) {
-  console.log("onAccept " + JSON.stringify(info));
+  debug("onAccept " + JSON.stringify(info));
   if (info.socketId != serverSocketId)
     return;
 
@@ -60,7 +66,7 @@ function onAccept(info) {
 }
 
 function readIntoBuf(data) {
-  console.log("readIntoBuf " + "bytesToRead: " + bytesToRead + ", datalen: " + data.byteLength + ", buflen: " + buf.length);
+  debug("readIntoBuf " + "bytesToRead: " + bytesToRead + ", datalen: " + data.byteLength + ", buflen: " + buf.length);
   var n = Math.min(data.byteLength, bytesToRead);
   buf.set(new Uint8Array(data.slice(0, n)), buf.length - bytesToRead);
   bytesToRead -= n;
@@ -68,7 +74,7 @@ function readIntoBuf(data) {
 }
 
 function onReceive(info) {
-  console.log("onReceive " + JSON.stringify(info) + " len: " + info.data.byteLength);
+  debug("onReceive " + JSON.stringify(info) + " len: " + info.data.byteLength);
   var data = info.data;
   switch (state) {
   case STATE_READING_LENGTH:
@@ -78,7 +84,7 @@ function onReceive(info) {
 
     var b = buf;
     bytesToRead = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
-    console.log(bytesToRead);
+    debug(bytesToRead);
     buf = new Uint8Array(bytesToRead);
     state = STATE_READING_OBJECT;
 
@@ -88,7 +94,7 @@ function onReceive(info) {
       return;
 
     var str = ab2str(buf);
-    console.log(str);
+    debug(str);
     var request = JSON.parse(str);
     makeRequest(request, info.socketId);
 
@@ -99,7 +105,7 @@ function onReceive(info) {
 }
 
 function makeRequest(request, socketId) {
-  console.log("makeRequest " + JSON.stringify(request));
+  debug("makeRequest " + JSON.stringify(request));
 
   port = chrome.runtime.connect(EXTENSION_ID);
   port.onMessage.addListener(function(response) {
@@ -107,13 +113,13 @@ function makeRequest(request, socketId) {
     port.disconnect();
   });
   port.onDisconnect.addListener(function() {
-    console.log("onDisconnect");
+    debug("onDisconnect");
   });
   port.postMessage(request);
 }
 
 function returnResponse(response, socketId) {
-  console.log("returnResponse " + JSON.stringify(response));
+  debug("returnResponse " + JSON.stringify(response));
   var str = JSON.stringify(response);
   var b = str2ab(str);
 
@@ -126,9 +132,9 @@ function returnResponse(response, socketId) {
   buf.set(new Uint8Array(b), 4);
 
   chrome.sockets.tcp.send(socketId, buf.buffer, function(info) {
-    console.log("send " + socketId);
+    debug("send " + socketId);
     if (info.resultCode != 0)
-      console.log("Send failed " + info.resultCode);
+      debug("Send failed " + info.resultCode);
   });
 }
 
