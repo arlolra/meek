@@ -70,6 +70,10 @@ const (
 	// Geometric increase in the polling interval each time we fail to read
 	// data.
 	pollIntervalMultiplier = 1.5
+	// Try an HTTP roundtrip at most this many times.
+	maxTries = 10
+	// Wait this long between retries.
+	retryDelay = 30 * time.Second
 	// Safety limits on interaction with the HTTP helper.
 	maxHelperResponseLength = 10000000
 	helperReadTimeout       = 60 * time.Second
@@ -127,23 +131,46 @@ func roundTripWithHTTP(buf []byte, info *RequestInfo) (*http.Response, error) {
 	return tr.RoundTrip(req)
 }
 
-// Send the data in buf to the remote URL, wait for a reply, and feed the reply
-// body back into conn.
-func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
+// Do a roundtrip, trying at most limit times if there is an HTTP status other
+// than 200. In case all tries result in error, returns the last error seen.
+//
+// Retrying the request immediately is a bit bogus, because we don't know if the
+// remote server received our bytes or not, so we may be sending duplicates,
+// which will cause the connection to die. The alternative, though, is to just
+// kill the connection immediately. A better solution would be a system of
+// acknowledgements so we know what to resend after an error.
+func roundTripRetries(buf []byte, info *RequestInfo, limit int) (*http.Response, error) {
 	roundTrip := roundTripWithHTTP
 	if options.HelperAddr != nil {
 		roundTrip = roundTripWithHelper
 	}
-	resp, err := roundTrip(buf, info)
+	var resp *http.Response
+	var err error
+again:
+	limit--
+	resp, err = roundTrip(buf, info)
+	// Retry only if the HTTP roundtrip completed without error, but
+	// returned a status other than 200. Other kinds of errors and success
+	// with 200 always return immediately.
+	if err == nil && resp.StatusCode != http.StatusOK {
+		err = errors.New(fmt.Sprintf("status code was %d, not %d", resp.StatusCode, http.StatusOK))
+		if limit > 0 {
+			log.Printf("%s; trying again after %.f seconds (%d)", err, retryDelay.Seconds(), limit)
+			time.Sleep(retryDelay);
+			goto again
+		}
+	}
+	return resp, err
+}
+
+// Send the data in buf to the remote URL, wait for a reply, and feed the reply
+// body back into conn.
+func sendRecv(buf []byte, conn net.Conn, info *RequestInfo) (int64, error) {
+	resp, err := roundTripRetries(buf, info, maxTries)
 	if err != nil {
 		return 0, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return 0, errors.New(fmt.Sprintf("status code was %d, not %d", resp.StatusCode, http.StatusOK))
-	}
-
 	return io.Copy(conn, io.LimitReader(resp.Body, maxPayloadLength))
 }
 
