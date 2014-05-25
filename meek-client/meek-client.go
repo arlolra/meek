@@ -320,7 +320,9 @@ func checkProxyURL(u *url.URL) error {
 		return errors.New(fmt.Sprintf("don't understand proxy URL scheme %q", options.ProxyURL.Scheme))
 	}
 	if options.HelperAddr != nil {
-		return errors.New("--helper can't be used with an upstream proxy")
+		if options.ProxyURL.User != nil {
+			return errors.New("a proxy URL with a username or password can't be used with --helper")
+		}
 	}
 	return nil
 }

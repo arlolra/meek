@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -21,12 +23,61 @@ type JSONRequest struct {
 	URL    string            `json:"url,omitempty"`
 	Header map[string]string `json:"header,omitempty"`
 	Body   []byte            `json:"body,omitempty"`
+	Proxy  *ProxySpec        `json:"proxy,omitempty"`
 }
 
 type JSONResponse struct {
 	Error  string `json:"error,omitempty"`
 	Status int    `json:"status"`
 	Body   []byte `json:"body"`
+}
+
+// ProxySpec encodes information we need to connect through a proxy.
+type ProxySpec struct {
+	// Acceptable values for Type are as in proposal 232: "http", "socks5",
+	// or "socks4a".
+	Type string `json:"type"`
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
+// Return a ProxySpec suitable for the proxy URL in u.
+func makeProxySpec(u *url.URL) (*ProxySpec, error) {
+	spec := new(ProxySpec)
+	var err error
+	var portStr string
+	var port uint64
+
+	if u == nil {
+		// No proxy.
+		return nil, nil
+	}
+
+	// Firefox's nsIProxyInfo doesn't allow credentials.
+	if u.User != nil {
+		return nil, errors.New("proxy URLs with a username or password can't be used with the helper")
+	}
+
+	if u.Scheme == "http" {
+		spec.Type = "http"
+	} else {
+		return nil, errors.New("unknown scheme")
+	}
+
+	spec.Host, portStr, err = net.SplitHostPort(u.Host)
+	if err != nil {
+		return nil, err
+	}
+	if spec.Host == "" {
+		return nil, errors.New("missing host")
+	}
+	port, err = strconv.ParseUint(portStr, 10, 16)
+	if err != nil {
+		return nil, err
+	}
+	spec.Port = int(port)
+
+	return spec, nil
 }
 
 // Do an HTTP roundtrip through the configured browser extension, using the
@@ -48,6 +99,10 @@ func roundTripWithHelper(buf []byte, info *RequestInfo) (*http.Response, error) 
 	req.Header["X-Session-Id"] = info.SessionID
 	if info.Host != "" {
 		req.Header["Host"] = info.Host
+	}
+	req.Proxy, err = makeProxySpec(options.ProxyURL)
+	if err != nil {
+		return nil, err
 	}
 	encReq, err := json.Marshal(&req)
 	if err != nil {
