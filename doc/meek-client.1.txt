@@ -58,7 +58,7 @@ OPTIONS
     **--helper 127.0.0.1:7000**.
 
 **--proxy**=__URL__::
-    URL of upstream proxy. If not given, the proxy URL may be taken from the
+    URL of upstream proxy.
     The **proxy** SOCKS arg overrides the command line. For
     example, **--proxy=http://localhost:8787/**.
 

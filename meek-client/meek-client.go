@@ -101,23 +101,19 @@ type RequestInfo struct {
 	// The Host header to put in the HTTP request (optional and may be
 	// different from the host name in URL).
 	Host string
-	// URL of an upstream proxy to use. If nil, the default net/http
-	// library's behavior is used, which is to check the HTTP_PROXY and
-	// http_proxy environment for a proxy URL.
+	// URL of an upstream proxy to use. If nil, no proxy is used.
 	ProxyURL *url.URL
 }
 
 // Do an HTTP roundtrip using the payload data in buf and the request metadata
 // in info.
 func roundTripWithHTTP(buf []byte, info *RequestInfo) (*http.Response, error) {
-	tr := http.DefaultTransport
+	tr := new(http.Transport)
 	if info.ProxyURL != nil {
 		if info.ProxyURL.Scheme != "http" {
 			panic(fmt.Sprintf("don't know how to use proxy %s", info.ProxyURL.String()))
 		}
-		tr = &http.Transport{
-			Proxy: http.ProxyURL(info.ProxyURL),
-		}
+		tr.Proxy = http.ProxyURL(info.ProxyURL)
 	}
 	req, err := http.NewRequest("POST", info.URL.String(), bytes.NewReader(buf))
 	if err != nil {
@@ -325,7 +321,7 @@ func main() {
 	flag.StringVar(&options.Front, "front", "", "front domain name if no front= SOCKS arg")
 	flag.StringVar(&helperAddr, "helper", "", "address of HTTP helper (browser extension)")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
-	flag.StringVar(&proxy, "proxy", "", "proxy URL (default from proxy= SOCKS arg or HTTP_PROXY environment variable)")
+	flag.StringVar(&proxy, "proxy", "", "proxy URL if no proxy= SOCKS arg")
 	flag.StringVar(&options.URL, "url", "", "URL to request if no url= SOCKS arg")
 	flag.Parse()
 
