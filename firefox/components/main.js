@@ -133,9 +133,10 @@ MeekHTTPHelper.lookupStatus = function(status) {
 //   undefined
 MeekHTTPHelper.buildProxyInfo = function(spec) {
     // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIProxyInfo#Constants
+    var flags = Components.interfaces.nsIProxyInfo.TRANSPARENT_PROXY_RESOLVES_HOST;
     if (spec === undefined) {
         // "direct"; i.e., no proxy. This is the default.
-        return MeekHTTPHelper.proxyProtocolService.newProxyInfo("direct", "", 0, 0, 0xffffffff, null);
+        return MeekHTTPHelper.proxyProtocolService.newProxyInfo("direct", "", 0, flags, 0xffffffff, null);
     }
     return null;
 };
