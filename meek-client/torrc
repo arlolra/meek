@@ -1,4 +1,9 @@
 UseBridges 1
+
+# Socks4Proxy localhost:1080
+# Socks5Proxy localhost:1080
+# HTTPSProxy localhost:8080
+
 # Bridge meek 0.0.2.0:1 url=https://meek-reflect.appspot.com/ front=www.google.com
 # ClientTransportPlugin meek exec ./meek-client --log meek-client.log
 Bridge meek 0.0.2.0:1
