@@ -97,6 +97,16 @@ MeekHTTPHelper.prototype = {
 MeekHTTPHelper.LOCAL_READ_TIMEOUT = 2.0;
 MeekHTTPHelper.LOCAL_WRITE_TIMEOUT = 2.0;
 
+// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIProtocolProxyService
+MeekHTTPHelper.proxyProtocolService = Components.classes["@mozilla.org/network/protocol-proxy-service;1"]
+    .getService(Components.interfaces.nsIProtocolProxyService);
+
+// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIIOService
+MeekHTTPHelper.ioService = Components.classes["@mozilla.org/network/io-service;1"]
+    .getService(Components.interfaces.nsIIOService);
+MeekHTTPHelper.httpProtocolHandler = MeekHTTPHelper.ioService.getProtocolHandler("http")
+    .QueryInterface(Components.interfaces.nsIHttpProtocolHandler);
+
 // Set the transport to time out at the given absolute deadline.
 MeekHTTPHelper.refreshDeadline = function(transport, deadline) {
     var timeout;
@@ -112,6 +122,20 @@ MeekHTTPHelper.lookupStatus = function(status) {
     for (var name in Components.results) {
         if (Components.results[name] === status)
             return name;
+    }
+    return null;
+};
+
+// Return an nsIProxyInfo according to the given specification. Returns null on
+// error.
+// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIProxyInfo
+// The specification may look like:
+//   undefined
+MeekHTTPHelper.buildProxyInfo = function(spec) {
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIProxyInfo#Constants
+    if (spec === undefined) {
+        // "direct"; i.e., no proxy. This is the default.
+        return MeekHTTPHelper.proxyProtocolService.newProxyInfo("direct", "", 0, 0, 0xffffffff, null);
     }
     return null;
 };
@@ -138,10 +162,20 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
             this.transport.close(0);
             return;
         }
-        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIIOService
-        var ioService = Components.classes["@mozilla.org/network/io-service;1"]
-            .getService(Components.interfaces.nsIIOService);
-        this.channel = ioService.newChannel(req.url, null, null)
+
+        // Check what proxy to use, if any.
+        // dump("using proxy " + JSON.stringify(req.proxy) + "\n");
+        var proxyInfo = MeekHTTPHelper.buildProxyInfo(req.proxy);
+        if (proxyInfo === null) {
+            dump("can't create nsIProxyInfo from " + JSON.stringify(req.proxy) + "\n");
+            this.transport.close(0);
+            return;
+        }
+
+        // Construct an HTTP channel with the given nsIProxyInfo.
+        // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIHttpChannel
+        var uri = MeekHTTPHelper.ioService.newURI(req.url, null, null);
+        this.channel = MeekHTTPHelper.httpProtocolHandler.newProxiedChannel(uri, proxyInfo, 0, null)
             .QueryInterface(Components.interfaces.nsIHttpChannel);
         if (req.header !== undefined) {
             for (var key in req.header) {
