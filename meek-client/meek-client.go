@@ -80,10 +80,10 @@ var ptInfo pt.ClientInfo
 
 // Store for command line options.
 var options struct {
-	URL          string
-	Front        string
-	HTTPProxyURL *url.URL
-	HelperAddr   *net.TCPAddr
+	URL        string
+	Front      string
+	ProxyURL   *url.URL
+	HelperAddr *net.TCPAddr
 }
 
 // When a connection handler starts, +1 is written to this channel; when it
@@ -101,19 +101,22 @@ type RequestInfo struct {
 	// The Host header to put in the HTTP request (optional and may be
 	// different from the host name in URL).
 	Host string
-	// URL of an HTTP proxy to use. If nil, the default net/http library's
-	// behavior is used, which is to check the HTTP_PROXY and http_proxy
-	// environment for a proxy URL.
-	HTTPProxyURL *url.URL
+	// URL of an upstream proxy to use. If nil, the default net/http
+	// library's behavior is used, which is to check the HTTP_PROXY and
+	// http_proxy environment for a proxy URL.
+	ProxyURL *url.URL
 }
 
 // Do an HTTP roundtrip using the payload data in buf and the request metadata
 // in info.
 func roundTripWithHTTP(buf []byte, info *RequestInfo) (*http.Response, error) {
 	tr := http.DefaultTransport
-	if info.HTTPProxyURL != nil {
+	if info.ProxyURL != nil {
+		if info.ProxyURL.Scheme != "http" {
+			panic(fmt.Sprintf("don't know how to use proxy %s", info.ProxyURL.String()))
+		}
 		tr = &http.Transport{
-			Proxy: http.ProxyURL(info.HTTPProxyURL),
+			Proxy: http.ProxyURL(info.ProxyURL),
 		}
 	}
 	req, err := http.NewRequest("POST", info.URL.String(), bytes.NewReader(buf))
@@ -278,15 +281,15 @@ func handler(conn *pt.SocksConn) error {
 		info.URL.Host = front
 	}
 
-	// First check http-proxy= SOCKS arg, then --http-proxy option.
-	httpProxy, ok := conn.Req.Args.Get("http-proxy")
+	// First check proxy= SOCKS arg, then --proxy option.
+	proxy, ok := conn.Req.Args.Get("proxy")
 	if ok {
-		info.HTTPProxyURL, err = url.Parse(httpProxy)
+		info.ProxyURL, err = url.Parse(proxy)
 		if err != nil {
 			return err
 		}
-	} else if options.HTTPProxyURL != nil {
-		info.HTTPProxyURL = options.HTTPProxyURL
+	} else if options.ProxyURL != nil {
+		info.ProxyURL = options.ProxyURL
 	}
 
 	return copyLoop(conn, &info)
@@ -315,14 +318,14 @@ func acceptLoop(ln *pt.SocksListener) error {
 
 func main() {
 	var helperAddr string
-	var httpProxy string
 	var logFilename string
+	var proxy string
 	var err error
 
 	flag.StringVar(&options.Front, "front", "", "front domain name if no front= SOCKS arg")
 	flag.StringVar(&helperAddr, "helper", "", "address of HTTP helper (browser extension)")
-	flag.StringVar(&httpProxy, "http-proxy", "", "HTTP proxy URL (default from http-proxy= SOCKS arg or HTTP_PROXY environment variable)")
 	flag.StringVar(&logFilename, "log", "", "name of log file")
+	flag.StringVar(&proxy, "proxy", "", "proxy URL (default from proxy= SOCKS arg or HTTP_PROXY environment variable)")
 	flag.StringVar(&options.URL, "url", "", "URL to request if no url= SOCKS arg")
 	flag.Parse()
 
@@ -335,7 +338,7 @@ func main() {
 		log.SetOutput(f)
 	}
 
-	if helperAddr != "" && httpProxy != "" {
+	if helperAddr != "" && proxy != "" {
 		log.Fatalf("--helper and --http-proxy can't be used together")
 	}
 
@@ -347,10 +350,10 @@ func main() {
 		log.Printf("using helper on %s", options.HelperAddr)
 	}
 
-	if httpProxy != "" {
-		options.HTTPProxyURL, err = url.Parse(httpProxy)
+	if proxy != "" {
+		options.ProxyURL, err = url.Parse(proxy)
 		if err != nil {
-			log.Fatalf("can't parse HTTP proxy URL: %s", err)
+			log.Fatalf("can't parse proxy URL: %s", err)
 		}
 	}
 

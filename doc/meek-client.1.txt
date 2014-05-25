@@ -57,10 +57,10 @@ OPTIONS
     Address of HTTP helper browser extension. For example,
     **--helper 127.0.0.1:7000**.
 
-**--http-proxy**=__URL__::
-    URL of HTTP proxy. If not given, the proxy URL may be taken from the
-    The **http-proxy** SOCKS arg overrides the command line. For
-    example, **--http-proxy=http://localhost:8787/**.
+**--proxy**=__URL__::
+    URL of upstream proxy. If not given, the proxy URL may be taken from the
+    The **proxy** SOCKS arg overrides the command line. For
+    example, **--proxy=http://localhost:8787/**.
 
 **--log**=__FILENAME__::
     Name of a file to write log messages to (default stderr).
