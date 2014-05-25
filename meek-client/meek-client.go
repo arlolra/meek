@@ -390,13 +390,13 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case sig = <-sigChan:
+			log.Printf("got signal %s", sig)
 		}
 	}
 	for _, ln := range listeners {
 		ln.Close()
 	}
 
-	log.Printf("got signal %s", sig)
 	if sig == syscall.SIGTERM {
 		log.Printf("done")
 		return
@@ -409,9 +409,9 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case sig = <-sigChan:
+			log.Printf("got second signal %s", sig)
 		}
 	}
 
-	log.Printf("got second signal %s", sig)
 	log.Printf("done")
 }
