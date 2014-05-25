@@ -40,6 +40,16 @@ func TestGetProxyURL(t *testing.T) {
 		{"socks4a://localhost:1080", "socks4a://localhost:1080"},
 		{"unknown://localhost/whatever", "unknown://localhost/whatever"},
 	}
+	/*
+		No port: reject; or infer from scheme?
+			http://localhost
+			socks4a://localhost
+			socks5://localhost
+		Port without host: probably reject?
+			http://:8080
+			socks4a://:1080
+			socks5://:1080
+	*/
 
 	os.Clearenv()
 	u, err := PtGetProxyURL()
