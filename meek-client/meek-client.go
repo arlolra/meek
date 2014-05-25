@@ -277,7 +277,8 @@ func handler(conn *pt.SocksConn) error {
 		info.URL.Host = front
 	}
 
-	// First check proxy= SOCKS arg, then --proxy option.
+	// First check proxy= SOCKS arg, then --proxy option/managed
+	// configuration.
 	proxy, ok := conn.Req.Args.Get("proxy")
 	if ok {
 		info.ProxyURL, err = url.Parse(proxy)
@@ -312,6 +313,18 @@ func acceptLoop(ln *pt.SocksListener) error {
 	return nil
 }
 
+// Return an error if this proxy URL doesn't work with the rest of the
+// configuration.
+func checkProxyURL(u *url.URL) error {
+	if options.ProxyURL.Scheme != "http" {
+		return errors.New(fmt.Sprintf("don't understand proxy URL scheme %q", options.ProxyURL.Scheme))
+	}
+	if options.HelperAddr != nil {
+		return errors.New("--helper can't be used with an upstream proxy")
+	}
+	return nil
+}
+
 func main() {
 	var helperAddr string
 	var logFilename string
@@ -334,10 +347,6 @@ func main() {
 		log.SetOutput(f)
 	}
 
-	if helperAddr != "" && proxy != "" {
-		log.Fatalf("--helper and --http-proxy can't be used together")
-	}
-
 	if helperAddr != "" {
 		options.HelperAddr, err = net.ResolveTCPAddr("tcp", helperAddr)
 		if err != nil {
@@ -356,6 +365,28 @@ func main() {
 	ptInfo, err = pt.ClientSetup([]string{ptMethodName})
 	if err != nil {
 		log.Fatalf("error in ClientSetup: %s", err)
+	}
+	ptProxyURL, err := PtGetProxyURL()
+	if err != nil {
+		PtProxyError(err.Error())
+		log.Fatalf("can't get managed proxy configuration: %s", err)
+	}
+
+	// Command-line proxy overrides managed configuration.
+	if options.ProxyURL == nil {
+		options.ProxyURL = ptProxyURL
+	}
+	// Check whether we support this kind of proxy.
+	if options.ProxyURL != nil {
+		err = checkProxyURL(options.ProxyURL)
+		if err != nil {
+			PtProxyError(err.Error())
+			log.Fatal(fmt.Sprintf("proxy error: %s", err))
+		}
+		log.Printf("using proxy %s", options.ProxyURL.String())
+		if ptProxyURL != nil {
+			PtProxyDone()
+		}
 	}
 
 	listeners := make([]net.Listener, 0)
