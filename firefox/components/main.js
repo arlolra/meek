@@ -12,6 +12,11 @@
 //      "header": {
 //          "Host": "meek-reflect.appspot.com",
 //          "X-Session-Id": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}
+//      },
+//      "proxy": {
+//          "type": "http",
+//          "host": "proxy.example.com",
+//          "port": 8080
 //      }
 //  }
 // The extension makes the request as commanded. It returns the response to the
@@ -131,12 +136,23 @@ MeekHTTPHelper.lookupStatus = function(status) {
 // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIProxyInfo
 // The specification may look like:
 //   undefined
+//   {"type": "http", "host": "example.com", "port": 8080}
+//   {"type": "socks5", "host": "example.com", "port": 1080}
+//   {"type": "socks4a", "host": "example.com", "port": 1080}
 MeekHTTPHelper.buildProxyInfo = function(spec) {
     // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIProxyInfo#Constants
     var flags = Components.interfaces.nsIProxyInfo.TRANSPARENT_PROXY_RESOLVES_HOST;
     if (spec === undefined) {
         // "direct"; i.e., no proxy. This is the default.
         return MeekHTTPHelper.proxyProtocolService.newProxyInfo("direct", "", 0, flags, 0xffffffff, null);
+    } else if (spec.type === "http") {
+        return MeekHTTPHelper.proxyProtocolService.newProxyInfo("http", spec.host, spec.port, flags, 0xffffffff, null);
+    } else if (spec.type === "socks5") {
+        // "socks5" is tor's name. "socks" is XPCOM's name.
+        return MeekHTTPHelper.proxyProtocolService.newProxyInfo("socks", spec.host, spec.port, flags, 0xffffffff, null);
+    } else if (spec.type === "socks4a") {
+        // "socks4a" is tor's name. "socks4" is XPCOM's name.
+        return MeekHTTPHelper.proxyProtocolService.newProxyInfo("socks4", spec.host, spec.port, flags, 0xffffffff, null);
     }
     return null;
 };
