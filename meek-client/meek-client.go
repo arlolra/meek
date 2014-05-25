@@ -325,7 +325,7 @@ func checkProxyURL(u *url.URL) error {
 		// With the helper we can use HTTP and SOCKS (because it is the
 		// browser that does the proxying, not us).
 		switch options.ProxyURL.Scheme {
-		case "http", "socks4a":
+		case "http", "socks5", "socks4a":
 		default:
 			return errors.New(fmt.Sprintf("don't understand proxy URL scheme %q", options.ProxyURL.Scheme))
 		}

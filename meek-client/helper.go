@@ -59,7 +59,7 @@ func makeProxySpec(u *url.URL) (*ProxySpec, error) {
 	}
 
 	switch u.Scheme {
-	case "http", "socks4a":
+	case "http", "socks5", "socks4a":
 		spec.Type = u.Scheme
 	default:
 		return nil, errors.New("unknown scheme")

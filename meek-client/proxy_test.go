@@ -36,6 +36,7 @@ func TestGetProxyURL(t *testing.T) {
 		{"http://localhost:8080/path", "http://localhost:8080/path"},
 		{"http://user@localhost:8080", "http://user@localhost:8080"},
 		{"http://user:password@localhost:8080", "http://user:password@localhost:8080"},
+		{"socks5://localhost:1080", "socks5://localhost:1080"},
 		{"socks4a://localhost:1080", "socks4a://localhost:1080"},
 		{"unknown://localhost/whatever", "unknown://localhost/whatever"},
 	}
