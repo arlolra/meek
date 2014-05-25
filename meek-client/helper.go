@@ -58,9 +58,10 @@ func makeProxySpec(u *url.URL) (*ProxySpec, error) {
 		return nil, errors.New("proxy URLs with a username or password can't be used with the helper")
 	}
 
-	if u.Scheme == "http" {
-		spec.Type = "http"
-	} else {
+	switch u.Scheme {
+	case "http", "socks4a":
+		spec.Type = u.Scheme
+	default:
 		return nil, errors.New("unknown scheme")
 	}
 
