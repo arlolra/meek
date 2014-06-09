@@ -146,6 +146,14 @@ MeekHTTPHelper.buildProxyInfo = function(spec) {
         // "direct"; i.e., no proxy. This is the default.
         return MeekHTTPHelper.proxyProtocolService.newProxyInfo("direct", "", 0, flags, 0xffffffff, null);
     } else if (spec.type === "http") {
+        // "http" proxy. Versions of Firefox before 32, and Tor Browser before
+        // 3.6.2, leak the covert Host header in HTTP proxy CONNECT requests.
+        // Using an HTTP proxy cannot provide effective obfuscation without such
+        // a patched Firefox.
+        // https://trac.torproject.org/projects/tor/ticket/12146
+        // https://gitweb.torproject.org/tor-browser.git/commitdiff/e08b91c78d919f66dd5161561ca1ad7bcec9a563
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1017769
+        // https://hg.mozilla.org/mozilla-central/rev/a1f6458800d4
         return MeekHTTPHelper.proxyProtocolService.newProxyInfo("http", spec.host, spec.port, flags, 0xffffffff, null);
     } else if (spec.type === "socks5") {
         // "socks5" is tor's name. "socks" is XPCOM's name.
