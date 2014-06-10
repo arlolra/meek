@@ -226,8 +226,7 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
 
     returnResponse: function(resp) {
         // dump("returnResponse " + JSON.stringify(resp) + "\n");
-        outputStream = this.transport.openOutputStream(
-            Components.interfaces.nsITransport.OPEN_BLOCKING | Components.interfaces.nsITransport.OPEN_UNBUFFERED, 0, 0);
+        outputStream = this.transport.openOutputStream(Components.interfaces.nsITransport.OPEN_BLOCKING, 0, 0);
         var output = Components.classes["@mozilla.org/binaryoutputstream;1"]
             .createInstance(Components.interfaces.nsIBinaryOutputStream);
         output.setOutputStream(outputStream);
@@ -284,8 +283,7 @@ MeekHTTPHelper.RequestReader = function(transport, callback) {
     this.callback = callback;
 
     this.curThread = Components.classes["@mozilla.org/thread-manager;1"].getService().currentThread;
-    this.inputStream = this.transport.openInputStream(
-        Components.interfaces.nsITransport.OPEN_BLOCKING | Components.interfaces.nsITransport.OPEN_UNBUFFERED, 0, 0);
+    this.inputStream = this.transport.openInputStream(Components.interfaces.nsITransport.OPEN_BLOCKING, 0, 0);
 
     this.state = this.STATE_READING_LENGTH;
     // Initially size the buffer to read the 4-byte length.
