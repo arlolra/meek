@@ -184,7 +184,7 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
     makeRequest: function(req) {
         // dump("makeRequest " + JSON.stringify(req) + "\n");
         if (!this.requestOk(req)) {
-            this.transport.close(0);
+            this.returnResponse({"error": "request failed validation"});
             return;
         }
 
@@ -192,8 +192,7 @@ MeekHTTPHelper.LocalConnectionHandler.prototype = {
         // dump("using proxy " + JSON.stringify(req.proxy) + "\n");
         var proxyInfo = MeekHTTPHelper.buildProxyInfo(req.proxy);
         if (proxyInfo === null) {
-            dump("can't create nsIProxyInfo from " + JSON.stringify(req.proxy) + "\n");
-            this.transport.close(0);
+            this.returnResponse({"error": "can't create nsIProxyInfo from " + JSON.stringify(req.proxy)});
             return;
         }
 
