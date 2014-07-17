@@ -156,7 +156,7 @@ again:
 		err = errors.New(fmt.Sprintf("status code was %d, not %d", resp.StatusCode, http.StatusOK))
 		if limit > 0 {
 			log.Printf("%s; trying again after %.f seconds (%d)", err, retryDelay.Seconds(), limit)
-			time.Sleep(retryDelay);
+			time.Sleep(retryDelay)
 			goto again
 		}
 	}
