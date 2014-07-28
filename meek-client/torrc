@@ -7,7 +7,9 @@ UseBridges 1
 
 Bridge meek 0.0.2.0:1
 ClientTransportPlugin meek exec ./meek-client --url=https://meek-reflect.appspot.com/ --front=www.google.com --log meek-client.log
+# ClientTransportPlugin meek exec ./meek-client --url=https://d2zfqthxsdq309.cloudfront.net/ --front=a0.awsstatic.com --log meek-client.log
 
 # With tor 0.2.5 you can do it this way:
 # Bridge meek 0.0.2.0:1 url=https://meek-reflect.appspot.com/ front=www.google.com
+# Bridge meek 0.0.2.0:2 url=https://d2zfqthxsdq309.cloudfront.net/ front=a0.awsstatic.com
 # ClientTransportPlugin meek exec ./meek-client --log meek-client.log
