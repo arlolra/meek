@@ -62,6 +62,14 @@ MeekHTTPHelper.prototype = {
             return;
 
         try {
+            var prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                .getService(Components.interfaces.nsIPrefBranch);
+            // Allow unproxied DNS, working around a Tor Browser patch:
+            // https://trac.torproject.org/projects/tor/ticket/11183#comment:6.
+            // We set TRANSPARENT_PROXY_RESOLVES_HOST whenever we are asked to
+            // use a proxy, so name resolution uses the proxy despite this pref.
+            prefs.setBoolPref("network.proxy.socks_remote_dns", false);
+
             // https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIServerSocket
             var serverSocket = Components.classes["@mozilla.org/network/server-socket;1"]
                 .createInstance(Components.interfaces.nsIServerSocket);
