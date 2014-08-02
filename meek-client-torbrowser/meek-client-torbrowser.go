@@ -147,7 +147,7 @@ func main() {
 	flag.Parse()
 
 	if logFilename != "" {
-		f, err := os.OpenFile("meek-client-torbrowser.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		f, err := os.OpenFile(logFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			log.Fatal(err)
 		}
