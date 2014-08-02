@@ -43,7 +43,8 @@ import (
 	"syscall"
 )
 
-var helperAddrPattern *regexp.Regexp
+// This magic string is emitted by meek-http-helper.
+var helperAddrPattern = regexp.MustCompile(`^meek-http-helper: listen (127\.0\.0\.1:\d+)$`)
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage: %s [meek-client-torbrowser args] -- meek-client [meek-client args]\n", os.Args[0])
@@ -157,12 +158,6 @@ func main() {
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	// This magic string is emitted by meek-http-helper.
-	helperAddrPattern, err = regexp.Compile(`^meek-http-helper: listen (127\.0\.0\.1:\d+)$`)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// Start firefox.
 	firefoxCmd, stdout, err := runFirefox()
