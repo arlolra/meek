@@ -164,6 +164,8 @@ func transact(session *Session, w http.ResponseWriter, req *http.Request) error 
 		}
 	}
 	// log.Printf("read %d bytes from ORPort: %q", n, buf[:n])
+	// Set a Content-Type to prevent Go and the CDN from trying to guess.
+	w.Header().Set("Content-Type", "application/octet-stream")
 	n, err = w.Write(buf[:n])
 	if err != nil {
 		return errors.New(fmt.Sprintf("writing to response: %s", err))
