@@ -126,7 +126,6 @@ func roundTripWithHTTP(buf []byte, info *RequestInfo) (*http.Response, error) {
 	if info.Host != "" {
 		req.Host = info.Host
 	}
-	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("X-Session-Id", info.SessionID)
 	return tr.RoundTrip(req)
 }
