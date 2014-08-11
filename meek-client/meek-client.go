@@ -351,7 +351,7 @@ func checkProxyURL(u *url.URL) error {
 		// With the helper we can use HTTP and SOCKS (because it is the
 		// browser that does the proxying, not us).
 		// For the HTTP proxy with the Firefox helper: versions of
-		// Firefox before 32 , and Tor Browser before 3.6.2, leak the
+		// Firefox before 32, and Tor Browser before 3.6.2, leak the
 		// covert Host header in HTTP proxy CONNECT requests. Using an
 		// HTTP proxy cannot provide effective obfuscation without such
 		// a patched Firefox.
