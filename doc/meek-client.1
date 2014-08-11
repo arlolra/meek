@@ -2,12 +2,12 @@
 .\"     Title: meek-client
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 05/25/2014
+.\"      Date: 08/10/2014
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "MEEK\-CLIENT" "1" "05/25/2014" "\ \&" "\ \&"
+.TH "MEEK\-CLIENT" "1" "08/10/2014" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -65,6 +65,24 @@ ClientTransportPlugin meek exec \&./meek\-client \-\-url=https://meek\-reflect\&
 The advantage of SOCKS args is that multiple Bridge lines can have different configurations\&.
 .sp
 The \fB\-\-helper\fR option prevents meek\-client from doing any network operations itself\&. Rather, it will send all requests through a browser extension, which must be set up separately\&.
+.sp
+You can also control an upstream proxy using torrc options:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+HTTPSProxy localhost:8080
+Socks4Proxy localhost:1080
+Socks5Proxy localhost:1080
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+or, equivalently, using the \fB\-\-proxy\fR command\-line option or \fBproxy\fR SOCKS arg\&.
+.sp
+When the \fB\-\-helper\fR option is used, you can use any type of proxy: HTTP or SOCKS\&. Without \fB\-\-helper\fR, you can only use an HTTP proxy\&.
 .SH "OPTIONS"
 .PP
 \fB\-\-front\fR=\fIDOMAIN\fR
@@ -82,10 +100,16 @@ Address of HTTP helper browser extension\&. For example,
 .PP
 \fB\-\-proxy\fR=\fIURL\fR
 .RS 4
-URL of upstream proxy\&. The
+URL of upstream proxy\&. For example,
+\fB\-\-proxy=http://localhost:8080/\fR,
+\fB\-\-proxy=socks4a://localhost:1080\fR, or
+\fB\-\-proxy=socks5://localhost:1080\fR\&. The
 \fBproxy\fR
-SOCKS arg overrides the command line\&. For example,
-\fB\-\-proxy=http://localhost:8787/\fR\&.
+SOCKS arg overrides the command line\&. You would normally control the proxy using the
+\fBHTTPSProxy\fR,
+\fBSocks4Proxy\fR, or
+\fBSocks5Proxy\fR
+configuration options in a torrc file, instead of using this option\&.
 .RE
 .PP
 \fB\-\-log\fR=\fIFILENAME\fR
