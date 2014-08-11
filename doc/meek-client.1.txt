@@ -47,6 +47,18 @@ The **--helper** option prevents meek-client from doing any network
 operations itself. Rather, it will send all requests through a browser
 extension, which must be set up separately.
 
+You can also control an upstream proxy using torrc options:
+----
+HTTPSProxy localhost:8080
+Socks4Proxy localhost:1080
+Socks5Proxy localhost:1080
+----
+or, equivalently, using the **--proxy** command-line option or **proxy**
+SOCKS arg.
+
+When the **--helper** option is used, you can use any type of proxy:
+HTTP or SOCKS. Without **--helper**, you can only use an HTTP proxy.
+
 OPTIONS
 -------
 **--front**=__DOMAIN__::
@@ -58,9 +70,13 @@ OPTIONS
     **--helper 127.0.0.1:7000**.
 
 **--proxy**=__URL__::
-    URL of upstream proxy.
-    The **proxy** SOCKS arg overrides the command line. For
-    example, **--proxy=http://localhost:8787/**.
+    URL of upstream proxy. For example,
+    **--proxy=http://localhost:8080/**,
+    **--proxy=socks4a://localhost:1080**, or
+    **--proxy=socks5://localhost:1080**. The **proxy** SOCKS arg
+    overrides the command line. You would normally control the proxy
+    using the **HTTPSProxy**, **Socks4Proxy**, or **Socks5Proxy**
+    configuration options in a torrc file, instead of using this option.
 
 **--log**=__FILENAME__::
     Name of a file to write log messages to (default stderr).
