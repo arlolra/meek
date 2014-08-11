@@ -25,10 +25,12 @@ with plain HTTP.
 Configuration for meek-server usually appears in a torrc file. Here is a
 sample configuration using HTTPS:
 ----
+ExtORPort auto
 ServerTransportPlugin meek exec ./meek-server --port 8443 --cert cert.pem --key key.pem --log meek-server.log
 ----
 Here is a sample configuration using plain HTTP:
 ----
+ExtORPort auto
 ServerTransportPlugin meek exec ./meek-server --port 8080 --disable-tls --log meek-server.log
 ----
 
