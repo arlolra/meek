@@ -321,12 +321,12 @@ MeekHTTPHelper.RequestReader.prototype = {
             switch (this.state) {
             case this.STATE_READING_LENGTH:
                 this.doStateReadingLength(input);
-                this.asyncWait(inputStream);
+                this.asyncWait();
                 break;
             case this.STATE_READING_OBJECT:
                 this.doStateReadingObject(input);
                 if (this.bytesToRead > 0)
-                    this.asyncWait(inputStream);
+                    this.asyncWait();
                 break;
             }
         } catch (e) {
