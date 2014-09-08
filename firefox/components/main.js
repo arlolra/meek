@@ -340,7 +340,7 @@ MeekHTTPHelper.RequestReader.prototype = {
     readIntoBuf: function(input) {
         var n = Math.min(input.available(), this.bytesToRead);
         var data = input.readByteArray(n);
-        this.buf.subarray(this.buf.length - this.bytesToRead, n).set(data)
+        this.buf.subarray(this.buf.length - this.bytesToRead).set(data);
         this.bytesToRead -= n;
     },
 
