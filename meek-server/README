@@ -1,0 +1,19 @@
+# How to run a meek-server (meek bridge):
+
+- Compile the program using 'go build'.
+
+- Update your torrc file. There's a sample on /meek-server/torrc.
+
+	NOTE: if you want to run your bridge on two different ports (HTTP and HTTPS), use something like this:
+
+	ServerTransportPlugin meek exec /usr/local/bin/meek-server --port 7002 --disable-tls --log /var/log/tor/meek-server.log
+	ServerTransportPlugin meek exec /usr/local/bin/meek-server --port 7443 --cert /etc/meek/cert.pem --key /etc/meek/key.pem --log /var/log/tor/meek-server-https.log
+
+- To test your bridge on the clinet side, you can add a line like this to your torrc:
+	
+	Bridge meek 0.0.2.0:3 url=http://my-bridge.example.com:7002/
+
+# Important Note: 
+
+	If you're running more than one transport, you need a separate tor process for each, to avoid user counting confusion.
+	For more information, see https://lists.torproject.org/pipermail/tor-dev/2014-September/007480.html and https://trac.torproject.org/projects/tor/wiki/doc/meek#Users
