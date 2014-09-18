@@ -34,8 +34,7 @@ meek-client:
 The client transport plugin, run by a censored client.
 
 meek-server:
-The server transport plugin, run on a Tor relay. A public instance of
-meek-server runs at meek.bamsoftware.com:7002.
+The server transport plugin, run on a Tor relay.
 
 appengine:
 Reflector web app that runs on Google App Engine. The reflector simply
