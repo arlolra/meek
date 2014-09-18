@@ -36,7 +36,6 @@ func pathJoin(a, b string) string {
 // bridge doesn't need to know. In responses, there may be things like
 // Transfer-Encoding that interfere with App Engine's own hop-by-hop headers.
 var reflectedHeaderFields = []string{
-	"Content-Type",
 	"X-Session-Id",
 }
 
