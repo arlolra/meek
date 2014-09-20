@@ -1,0 +1,13 @@
+Ideally, this component can run on any platform that supports PHP. It lies
+between meek-client and meek-server, and receives requests from the client and
+forwards them to the server, then receives responses from the server and
+forwards them to the client.
+
+To test locally, run:
+	php -S 127.0.0.1:8080
+
+The app will be running at http://127.0.0.1:8080/. To configure meek-client to
+talk to the locally running app, put this in torrc:
+	UseBridges 1
+	Bridge meek 0.0.2.0:1
+	ClientTransportPlugin meek exec ./meek-client --url=http://127.0.0.1:8080/ --log meek-client.log

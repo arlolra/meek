@@ -58,6 +58,11 @@ latencytest:
 A test program for App Engine that measures roundtrip times to different
 destinations.
 
+php:
+A php reflector similar to the appengine one above. Ideally, it can be run on
+any platform that supports php. A public instance is at:
+https://meek-reflect.herokuapp.com/
+
 To the extent possible under law, the authors have dedicated all
 copyright and related and neighboring rights to this software to the
 public domain worldwide. This software is distributed without any
